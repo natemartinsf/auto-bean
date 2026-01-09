@@ -70,3 +70,13 @@ Admin uses Supabase session auth with RLS policies.
 - Tailwind CSS for styling (no component library)
 - ~100 voters expected - frontend aggregation is sufficient
 - Results reveal has staggered animation (3rd → 2nd → 1st) with confetti
+
+## Documentation
+
+MCP servers are configured in `.mcp.json` for live documentation access:
+- **svelte** - Official SvelteKit docs and code analysis (use `mcp-cli tools svelte` to see available tools)
+- **tailwind** - Tailwind CSS utilities, docs, and CSS-to-Tailwind conversion
+
+Manual reference:
+- SvelteKit: https://svelte.dev/docs/kit
+- Tailwind CSS: https://tailwindcss.com/docs
