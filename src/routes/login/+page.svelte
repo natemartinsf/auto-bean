@@ -1,19 +1,10 @@
 <script lang="ts">
 	import { supabase } from '$lib/supabase';
-	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 
 	let email = $state('');
 	let password = $state('');
 	let error = $state('');
 	let loading = $state(false);
-
-	onMount(async () => {
-		const { data } = await supabase.auth.getSession();
-		if (data.session) {
-			goto('/admin');
-		}
-	});
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -31,7 +22,8 @@
 			return;
 		}
 
-		goto('/admin');
+		// Hard redirect to ensure server reads the new auth cookies
+		window.location.href = '/admin';
 	}
 </script>
 
