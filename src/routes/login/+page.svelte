@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { supabase } from '$lib/supabase';
+	let { data } = $props();
 
 	let email = $state('');
 	let password = $state('');
@@ -11,7 +11,7 @@
 		error = '';
 		loading = true;
 
-		const { error: authError } = await supabase.auth.signInWithPassword({
+		const { error: authError } = await data.supabase.auth.signInWithPassword({
 			email,
 			password
 		});
@@ -35,7 +35,7 @@
 	<div class="w-full max-w-sm">
 		<h1 class="heading text-center mb-6">Admin Login</h1>
 
-		<form class="card space-y-4" onsubmit={handleSubmit}>
+		<form class="card space-y-4" onsubmit={(e) => { e.preventDefault(); handleSubmit(e); }}>
 			<div>
 				<label class="label" for="email">Email</label>
 				<input
