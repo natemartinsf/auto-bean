@@ -14,8 +14,6 @@ Tailwind CSS, no component library. The UI is simple (forms, lists, buttons) and
 
 **Look and Feel**: Defined collaboratively before building UI components. Goal: fun, easy to use, not obviously "AI-generated". Color scheme, typography, and visual style locked in before implementation.
 
-**Tweak Panels**: All UI components include a dev-mode tweak panel with sliders/controls for configurable values (colors, spacing, timing, etc.). User adjusts until happy, then values are locked in and panel removed. This avoids slow back-and-forth iteration on visual details.
-
 ### Authentication & Authorization
 
 - **Voters**: UUID-in-URL authentication (`/vote/[event_id]/[voter_uuid]`). No login required. Voter records created lazily on first page load.
@@ -196,22 +194,13 @@ src/
   - Auto-deploy on push to main branch
   - Production URL accessible (even if just showing default SvelteKit page)
 
-#### Task 1.4: TweakPanel Utility
-- **What**: Reusable dev-mode panel for real-time UI adjustments
-- **Acceptance criteria**:
-  - Svelte component that renders sliders/inputs for any passed config
-  - Only visible in dev mode (hidden in production)
-  - Changes update in real-time
-  - "Copy values" button to export final settings
-  - Can be dropped into any component during development
-
-#### Task 1.5: Define Look and Feel
+#### Task 1.4: Define Look and Feel
 - **What**: Collaboratively define visual style before building UI
 - **Acceptance criteria**:
   - Color palette chosen (primary, secondary, accent, backgrounds, text)
   - Typography selected (font family, size scale)
   - Visual style defined (fun, approachable, not "AI-looking")
-  - Example elements mocked up (buttons, cards, inputs) with TweakPanel for adjustment
+  - Example elements mocked up (buttons, cards, inputs)
   - Design tokens documented in Tailwind config or CSS variables
 
 ### Phase 2: Admin Authentication
