@@ -18,9 +18,14 @@
 	<div class="min-h-screen">
 		<header class="border-b border-brown-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
 			<div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-				<a href="/admin" class="text-lg font-bold text-brown-900 no-underline hover:text-brown-700">
-					Admin
-				</a>
+				<nav class="flex items-center gap-6">
+					<a href="/admin" class="text-lg font-bold text-brown-900 no-underline hover:text-brown-700">
+						Admin
+					</a>
+					<a href="/admin/admins" class="text-sm text-brown-600 no-underline hover:text-brown-900">
+						Manage Admins
+					</a>
+				</nav>
 				<div class="flex items-center gap-4">
 					<span class="text-sm text-muted">{data.admin?.email}</span>
 					<form method="POST" action="/logout">

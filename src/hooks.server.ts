@@ -1,5 +1,7 @@
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -16,6 +18,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 			}
 		}
 	});
+
+	// Admin client with service role (for auth.users queries)
+	// Will be null if service role key is not configured
+	event.locals.supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
+		? createClient(PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+		: null;
 
 	event.locals.safeGetSession = async () => {
 		const {
