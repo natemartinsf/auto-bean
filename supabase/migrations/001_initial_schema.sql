@@ -367,6 +367,21 @@ CREATE POLICY "event_admins_delete_admin"
   USING (is_admin());
 
 -- ============================================================================
+-- GRANTS
+-- ============================================================================
+-- RLS policies control which rows are visible, but GRANT controls table access.
+-- Tables with policies for 'public' role inherit grants automatically.
+-- Tables with policies only for 'authenticated' need explicit grants.
+
+GRANT SELECT ON admins TO authenticated;
+GRANT INSERT ON admins TO authenticated;
+GRANT DELETE ON admins TO authenticated;
+
+GRANT SELECT ON event_admins TO authenticated;
+GRANT INSERT ON event_admins TO authenticated;
+GRANT DELETE ON event_admins TO authenticated;
+
+-- ============================================================================
 -- ENABLE REALTIME
 -- ============================================================================
 
