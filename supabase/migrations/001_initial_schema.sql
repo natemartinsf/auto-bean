@@ -373,7 +373,7 @@ CREATE POLICY "event_admins_delete_admin"
 -- Tables with policies for 'public' role inherit grants automatically.
 -- Tables with policies only for 'authenticated' need explicit grants.
 
-GRANT INSERT, UPDATE, DELETE ON events TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON events TO authenticated;
 
 GRANT SELECT ON admins TO authenticated;
 GRANT INSERT ON admins TO authenticated;
