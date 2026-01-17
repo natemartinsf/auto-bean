@@ -12,11 +12,9 @@ export const load: LayoutLoad = async ({ data, depends, fetch }) => {
 		}
 	});
 
-	// On the server, use the session from +layout.server.ts
-	// On the browser, the client will read from cookies
-	const session = typeof window !== 'undefined'
-		? (await supabase.auth.getSession()).data.session
-		: data.session;
+	// Always use the validated session from +layout.server.ts
+	// The server validates via getUser() in safeGetSession
+	const session = data.session;
 
 	return {
 		supabase,
