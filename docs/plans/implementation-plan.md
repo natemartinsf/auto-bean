@@ -167,14 +167,14 @@ src/
 
 ### Phase 1: Foundation
 
-#### Task 1.1: Supabase Project Setup
+#### Task 1.1: Supabase Project Setup ✅
 - **What**: Create Supabase project, configure auth settings, create all database tables with RLS policies
 - **Acceptance criteria**:
   - All tables exist with correct schema (including event_admins junction table)
   - RLS enabled: voters can only read/write their own votes, admins can only access assigned events (via event_admins), public can read beers/events
   - Auth configured for email/password signup
 
-#### Task 1.2: SvelteKit Project Scaffolding
+#### Task 1.2: SvelteKit Project Scaffolding ✅
 - **What**: Initialize SvelteKit project with TypeScript, install dependencies, configure Supabase client, set up git/GitHub
 - **Acceptance criteria**:
   - `npm run dev` starts successfully
@@ -186,7 +186,7 @@ src/
   - Git initialized with `.gitignore` (node_modules, .env, .svelte-kit, etc.)
   - GitHub repo created and initial commit pushed
 
-#### Task 1.3: Vercel Deployment Setup
+#### Task 1.3: Vercel Deployment Setup ✅
 - **What**: Connect GitHub repo to Vercel, configure environment variables
 - **Acceptance criteria**:
   - Vercel project created and linked to GitHub repo
@@ -194,7 +194,7 @@ src/
   - Auto-deploy on push to main branch
   - Production URL accessible (even if just showing default SvelteKit page)
 
-#### Task 1.4: Define Look and Feel
+#### Task 1.4: Define Look and Feel ✅
 - **What**: Collaboratively define visual style before building UI
 - **Acceptance criteria**:
   - Color palette chosen (primary, secondary, accent, backgrounds, text)
@@ -205,7 +205,7 @@ src/
 
 ### Phase 2: Admin Authentication
 
-#### Task 2.1: Login Page
+#### Task 2.1: Login Page ✅
 - **What**: Create `/login` route with email/password form, handle Supabase auth
 - **Acceptance criteria**:
   - Login form with email/password fields
@@ -213,7 +213,7 @@ src/
   - Redirects to `/admin` on success
   - "Sign up" link for new admin registration
 
-#### Task 2.2: Admin Layout with Auth Guard
+#### Task 2.2: Admin Layout with Auth Guard ✅
 - **What**: Create `/admin/+layout.server.ts` that checks session and admin status
 - **Acceptance criteria**:
   - Unauthenticated users redirected to `/login`
@@ -221,7 +221,7 @@ src/
   - Admin layout includes logout button
   - Session persists across page reloads
 
-#### Task 2.3: Admin Management
+#### Task 2.3: Admin Management ✅
 - **What**: UI for managing who can log into the system (global admin list)
 - **Acceptance criteria**:
   - List of all admins in system
@@ -230,6 +230,21 @@ src/
   - Remove button for each admin (except self)
   - Cannot remove self (prevents lockout)
   - Note: Event-specific access managed in Task 3.2
+
+#### Task 2.4: Auth Callback & Password Setup - Added, Not Started
+- **What**: Create `/auth/callback` route to handle email invitation and password reset flows
+- **Priority**: Non-blocking — existing admin account works for testing. Complete before production use with multiple admins.
+- **Acceptance criteria**:
+  - Route exchanges URL hash tokens for session via `supabase.auth.exchangeCodeForSession()`
+  - Detects flow type (invitation vs password reset) from session state
+  - Shows password form with confirmation field
+  - Password validation (minimum length, match confirmation)
+  - On submit: calls `supabase.auth.updateUser({ password })`
+  - Success redirects to `/admin`
+  - Error states handled (expired link, invalid token, etc.)
+  - Login page includes "Forgot password?" link
+  - Forgot password flow: sends reset email via `supabase.auth.resetPasswordForEmail()`
+- **Configuration note**: Redirect URLs configured in Supabase dashboard (Auth → URL Configuration).
 
 ### Phase 3: Event Management
 
