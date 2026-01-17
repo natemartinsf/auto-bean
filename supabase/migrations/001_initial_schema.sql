@@ -370,16 +370,22 @@ CREATE POLICY "event_admins_delete_admin"
 -- GRANTS
 -- ============================================================================
 -- RLS policies control which rows are visible, but GRANT controls table access.
--- Tables with policies for 'public' role inherit grants automatically.
--- Tables with policies only for 'authenticated' need explicit grants.
+-- Both 'anon' (unauthenticated) and 'authenticated' roles need explicit grants.
 
+-- Anonymous access (voters, tap volunteers, public pages)
+GRANT SELECT ON events TO anon;                      -- Voter/manage pages read event info
+GRANT SELECT, INSERT ON voters TO anon;             -- Lazy voter creation via upsert
+GRANT SELECT, INSERT ON beers TO anon;              -- Voters read, tap volunteers insert
+GRANT SELECT, INSERT, UPDATE ON votes TO anon;      -- Voters create/update votes
+GRANT SELECT, INSERT, UPDATE ON feedback TO anon;   -- Voters create/update feedback
+GRANT SELECT ON brewer_tokens TO anon;              -- Feedback page validation
+
+-- Authenticated access (admins)
 GRANT SELECT, INSERT, UPDATE, DELETE ON events TO authenticated;
-GRANT SELECT, DELETE ON beers TO authenticated;
-
+GRANT SELECT, INSERT, DELETE ON beers TO authenticated;
 GRANT SELECT ON admins TO authenticated;
 GRANT INSERT ON admins TO authenticated;
 GRANT DELETE ON admins TO authenticated;
-
 GRANT SELECT ON event_admins TO authenticated;
 GRANT INSERT ON event_admins TO authenticated;
 GRANT DELETE ON event_admins TO authenticated;
