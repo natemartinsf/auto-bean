@@ -375,6 +375,7 @@ CREATE POLICY "event_admins_delete_admin"
 -- Anonymous access (voters, tap volunteers, public pages)
 GRANT SELECT ON events TO anon;                      -- Voter/manage pages read event info
 GRANT SELECT, INSERT ON voters TO anon;             -- Lazy voter creation via upsert
+GRANT SELECT, INSERT ON voters TO authenticated;    -- Admins testing voter flow
 GRANT SELECT, INSERT ON beers TO anon;              -- Voters read, tap volunteers insert
 GRANT SELECT, INSERT, UPDATE ON votes TO anon;      -- Voters create/update votes
 GRANT SELECT, INSERT, UPDATE ON feedback TO anon;   -- Voters create/update feedback
