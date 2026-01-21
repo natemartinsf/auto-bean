@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import type { Event, Beer, Voter } from '$lib/types';
+import type { Event, Beer, Voter, Vote } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const eventId = params.event_id;
@@ -72,9 +72,20 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		console.error('Error fetching beers:', beersError);
 	}
 
+	// Get existing votes for this voter
+	const { data: votes, error: votesError } = await locals.supabase
+		.from('votes')
+		.select('*')
+		.eq('voter_id', voter!.id);
+
+	if (votesError) {
+		console.error('Error fetching votes:', votesError);
+	}
+
 	return {
 		event: event as Event,
 		voter: voter as Voter,
-		beers: (beers || []) as Beer[]
+		beers: (beers || []) as Beer[],
+		votes: (votes || []) as Vote[]
 	};
 };
