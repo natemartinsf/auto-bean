@@ -31,23 +31,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 		: null;
 
 	event.locals.safeGetSession = async () => {
+		// IMPORTANT: Always call getUser() first to validate the session
+		// This suppresses the Supabase security warning about trusting unvalidated session data
+		const {
+			data: { user },
+			error: userError
+		} = await event.locals.supabase.auth.getUser();
+
+		if (userError || !user) {
+			return { session: null, user: null };
+		}
+
+		// Session is safe to use after getUser() validation
+		// We need the session object for client-side auth state
 		const {
 			data: { session }
 		} = await event.locals.supabase.auth.getSession();
-
-		if (!session) {
-			return { session: null, user: null };
-		}
-
-		// Validate the session by fetching the user
-		const {
-			data: { user },
-			error
-		} = await event.locals.supabase.auth.getUser();
-
-		if (error) {
-			return { session: null, user: null };
-		}
 
 		return { session, user };
 	};
