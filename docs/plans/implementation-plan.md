@@ -301,7 +301,7 @@ src/
 
 ### Phase 5: Voter Experience
 
-#### Task 5.1: Voter Page - Basic Display
+#### Task 5.1: Voter Page - Basic Display ✅
 - **What**: `/vote/[event_id]/[voter_uuid]` shows beer list
 - **Acceptance criteria**:
   - Validates event_id exists
@@ -309,7 +309,7 @@ src/
   - Displays all beers for the event
   - Shows voting UI while `reveal_stage = 0`
 
-#### Task 5.2: Point Allocation Component
+#### Task 5.2: Point Allocation Component ✅
 - **What**: `PointPicker.svelte` for selecting points
 - **Acceptance criteria**:
   - Takes `max` prop (from event.max_points)
@@ -318,7 +318,7 @@ src/
   - Disabled state for when total points reached
   - Emits change event with new value
 
-#### Task 5.3: Vote Persistence
+#### Task 5.3: Vote Persistence ✅
 - **What**: Save votes to database, load existing votes on page load
 - **Acceptance criteria**:
   - Votes saved on change (upsert to votes table)
@@ -328,7 +328,7 @@ src/
   - Server-side validation rejects votes exceeding max_points (sums voter's points for event, rejects if over)
   - Returns clear error message if validation fails
 
-#### Task 5.4: Feedback Form
+#### Task 5.4: Feedback Form ✅
 - **What**: Notes field and "share with brewer" checkbox per beer
 - **Acceptance criteria**:
   - Text area for notes (optional)
@@ -336,7 +336,7 @@ src/
   - Saves to feedback table on change
   - Loads existing feedback on page load
 
-#### Task 5.5: Real-time Beer List
+#### Task 5.5: Real-time Beer List ✅
 - **What**: Subscribe to beer additions so new beers appear live
 - **Acceptance criteria**:
   - New beers added by tap volunteers appear without refresh
