@@ -422,7 +422,7 @@ src/
 
 ### Phase 8: Brewer Feedback View
 
-#### Task 8.1: Feedback Page
+#### Task 8.1: Feedback Page ✅
 - **What**: `/feedback/[brewer_token]` shows feedback for that beer
 - **Acceptance criteria**:
   - Validates brewer_token, shows error if invalid
