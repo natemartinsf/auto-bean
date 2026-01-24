@@ -456,10 +456,6 @@
 
 	<!-- Blind Tasting Mode -->
 	<div class="card">
-		<h2 class="text-lg font-semibold text-brown-900 mb-3">Blind Tasting Mode</h2>
-		<p class="text-sm text-muted mb-4">
-			When enabled, brewer names are hidden from voters during voting. Brewers are still revealed on the results page.
-		</p>
 		<form
 			method="POST"
 			action="?/toggleBlindTasting"
@@ -475,7 +471,7 @@
 				};
 			}}
 		>
-			<label class="flex items-center gap-3 cursor-pointer">
+			<label class="flex items-center gap-3 cursor-pointer mb-3">
 				<input
 					type="checkbox"
 					name="enabled"
@@ -483,9 +479,12 @@
 					onchange={(e) => e.currentTarget.form?.requestSubmit()}
 					class="w-5 h-5 rounded border-brown-300 text-amber-600 focus:ring-amber-500"
 				/>
-				<span class="text-brown-900">Blind Tasting Mode</span>
+				<span class="text-lg font-semibold text-brown-900">Blind Tasting Mode</span>
 			</label>
 		</form>
+		<p class="text-sm text-muted">
+			When enabled, brewer names are hidden from voters during voting. Brewers are still revealed on the results page.
+		</p>
 		{#if form?.error && form?.action === 'toggleBlindTasting'}
 			<p class="text-red-600 text-sm mt-3">{form.error}</p>
 		{/if}
