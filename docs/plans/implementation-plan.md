@@ -344,7 +344,7 @@ src/
 
 ### Phase 6: Results & Reveal
 
-#### Task 6.1: Database Migration - Staged Reveal
+#### Task 6.1: Database Migration - Staged Reveal ✅
 - **What**: Replace `results_visible` boolean with `reveal_stage` integer
 - **Acceptance criteria**:
   - Migration adds `reveal_stage INTEGER DEFAULT 0` to events table
@@ -353,7 +353,7 @@ src/
   - Migration drops `results_visible` column
   - TypeScript types updated (`Event.reveal_stage: number` replaces `results_visible: boolean`)
 
-#### Task 6.2: Admin Staged Reveal UI
+#### Task 6.2: Admin Staged Reveal UI ✅
 - **What**: Replace results toggle with sequential ceremony buttons
 - **Acceptance criteria**:
   - Shows current stage status (Hidden / Ceremony / 3rd Revealed / 2nd Revealed / 1st Revealed)
@@ -366,7 +366,7 @@ src/
   - "Reset" button appears when stage > 0, returns to stage 0 with confirmation
   - Updates database in real-time
 
-#### Task 6.3: Results Page with Staged Display
+#### Task 6.3: Results Page with Staged Display ✅
 - **What**: `/results/[event_id]` showing staged leaderboard controlled by admin
 - **Acceptance criteria**:
   - Stage 0: Shows "Results not yet revealed" (or redirects to event page)
@@ -379,7 +379,7 @@ src/
   - Large text, styled for projection/big screen viewing
   - Subscribes to `reveal_stage` changes for real-time updates
 
-#### Task 6.4: Voter Redirect on Ceremony Start
+#### Task 6.4: Voter Redirect on Ceremony Start ✅
 - **What**: Voter page subscribes to `reveal_stage`, redirects when ceremony starts
 - **Acceptance criteria**:
   - Voter page shows voting UI while `reveal_stage = 0`
@@ -387,7 +387,7 @@ src/
   - Redirect is immediate (real-time subscription)
   - All connected voters redirect simultaneously
 
-#### Task 6.5: Admin Live Vote Totals
+#### Task 6.5: Admin Live Vote Totals ✅
 - **What**: Admin event detail shows current vote totals
 - **Acceptance criteria**:
   - Per-beer: total points, number of voters who rated
