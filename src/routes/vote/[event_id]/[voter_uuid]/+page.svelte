@@ -242,10 +242,21 @@
 <div class="min-h-screen">
 	<header class="border-b border-brown-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
 		<div class="max-w-2xl mx-auto px-4 py-4">
-			<h1 class="text-xl font-bold text-brown-900">{data.event.name}</h1>
-			<p class="text-sm text-muted">
-				{totalUsed} of {data.event.max_points ?? 5} points used
-			</p>
+			<div class="flex items-center gap-3">
+				{#if data.event.logo_url}
+					<img
+						src={data.event.logo_url}
+						alt="{data.event.name} logo"
+						class="h-10 w-auto object-contain"
+					/>
+				{/if}
+				<div>
+					<h1 class="text-xl font-bold text-brown-900">{data.event.name}</h1>
+					<p class="text-sm text-muted">
+						{totalUsed} of {data.event.max_points ?? 5} points used
+					</p>
+				</div>
+			</div>
 		</div>
 	</header>
 
