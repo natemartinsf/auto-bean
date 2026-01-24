@@ -12,7 +12,12 @@
 	let { data } = $props();
 
 	// Track current reveal stage (synced from server data initially, then real-time updates)
-	let revealStage = $state(data.event.reveal_stage ?? 0);
+	let revealStage = $state(0);
+
+	// Sync state with props when data changes
+	$effect(() => {
+		revealStage = data.event.reveal_stage ?? 0;
+	});
 
 	// Track which places have been "revealed" with animation
 	// This prevents re-animating when returning to page

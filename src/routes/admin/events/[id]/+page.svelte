@@ -14,10 +14,19 @@
 	let copied = $state(false);
 	let copiedVoterLink = $state(false);
 	let copiedFeedbackId = $state<string | null>(null);
-	let beers = $state<BeerWithToken[]>(data.beers as BeerWithToken[]);
+	let beers = $state<BeerWithToken[]>([]);
 	let testVoterUrl = $state('');
-	let voteTotals = $state<Record<string, { totalPoints: number; voterCount: number }>>(data.voteTotals);
+	let voteTotals = $state<Record<string, { totalPoints: number; voterCount: number }>>({});
 	let isRefreshingVotes = $state(false);
+
+	// Sync state with props when data changes (e.g., after form submissions or navigation)
+	$effect(() => {
+		beers = data.beers as BeerWithToken[];
+	});
+
+	$effect(() => {
+		voteTotals = data.voteTotals;
+	});
 	let lastRefreshed = $state<Date>(new Date());
 	let qrCount = $state(100);
 	let isGeneratingQR = $state(false);

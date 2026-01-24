@@ -5,7 +5,12 @@
 	let { data } = $props();
 
 	type FeedbackItem = Pick<Feedback, 'id' | 'notes' | 'created_at'>;
-	let feedback = $state<FeedbackItem[]>(data.feedback);
+	let feedback = $state<FeedbackItem[]>([]);
+
+	// Sync state with props when data changes
+	$effect(() => {
+		feedback = data.feedback;
+	});
 
 	// Real-time subscription for new feedback
 	onMount(() => {

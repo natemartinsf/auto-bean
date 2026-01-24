@@ -9,7 +9,12 @@
 	let brewer = $state('');
 	let style = $state('');
 	let isSubmitting = $state(false);
-	let beers = $state<Beer[]>(data.beers);
+	let beers = $state<Beer[]>([]);
+
+	// Sync state with props when data changes
+	$effect(() => {
+		beers = data.beers;
+	});
 
 	// Real-time subscription for beer updates
 	onMount(() => {
