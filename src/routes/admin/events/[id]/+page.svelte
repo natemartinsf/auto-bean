@@ -2,8 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { Files, Check, RefreshCw } from 'lucide-svelte';
+	import { Files, Check, RefreshCw, QrCode } from 'lucide-svelte';
 	import type { Beer } from '$lib/types';
+	import QRCodeStyling from 'qr-code-styling';
 
 	type BeerWithToken = Beer & { brewer_tokens: { id: string } | null };
 
@@ -18,6 +19,8 @@
 	let voteTotals = $state<Record<string, { totalPoints: number; voterCount: number }>>(data.voteTotals);
 	let isRefreshingVotes = $state(false);
 	let lastRefreshed = $state<Date>(new Date());
+	let qrCount = $state(100);
+	let isGeneratingQR = $state(false);
 
 	const manageUrl = $derived(`${$page.url.origin}/manage/${data.event.manage_token}`);
 	const resultsUrl = $derived(`${$page.url.origin}/results/${data.event.id}`);
@@ -152,6 +155,167 @@
 		copiedFeedbackId = beerId;
 		setTimeout(() => (copiedFeedbackId = null), 2000);
 	}
+
+	async function generateQRCodes() {
+		if (qrCount < 1 || qrCount > 500) return;
+		isGeneratingQR = true;
+
+		try {
+			// Generate voter UUIDs and URLs
+			const voters = Array.from({ length: qrCount }, (_, i) => ({
+				uuid: crypto.randomUUID(),
+				number: i + 1
+			}));
+
+			// Generate QR code data URLs
+			const qrDataUrls: string[] = [];
+			for (const voter of voters) {
+				const url = `https://auto-bean.vercel.app/vote/${data.event.id}/${voter.uuid}`;
+				const qr = new QRCodeStyling({
+					width: 200,
+					height: 200,
+					data: url,
+					dotsOptions: {
+						color: '#4a3728',
+						type: 'rounded'
+					},
+					cornersSquareOptions: {
+						color: '#4a3728',
+						type: 'extra-rounded'
+					},
+					cornersDotOptions: {
+						color: '#d97706',
+						type: 'dot'
+					},
+					backgroundOptions: {
+						color: '#ffffff'
+					}
+				});
+
+				const blob = await qr.getRawData('png');
+				if (blob && blob instanceof Blob) {
+					const dataUrl = await blobToDataUrl(blob);
+					qrDataUrls.push(dataUrl);
+				}
+			}
+
+			// Build printable HTML
+			const html = buildPrintableHtml(voters, qrDataUrls, data.event.name);
+
+			// Open in new tab
+			const newWindow = window.open('', '_blank');
+			if (newWindow) {
+				newWindow.document.write(html);
+				newWindow.document.close();
+			}
+		} finally {
+			isGeneratingQR = false;
+		}
+	}
+
+	function blobToDataUrl(blob: Blob): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onloadend = () => resolve(reader.result as string);
+			reader.onerror = reject;
+			reader.readAsDataURL(blob);
+		});
+	}
+
+	function buildPrintableHtml(
+		voters: { uuid: string; number: number }[],
+		qrDataUrls: string[],
+		eventName: string
+	): string {
+		const cards = voters
+			.map(
+				(voter, i) => `
+			<div class="card">
+				<img src="${qrDataUrls[i]}" alt="QR Code ${voter.number}" />
+				<div class="card-number">#${voter.number}</div>
+				<div class="instruction">Scan to vote</div>
+			</div>
+		`
+			)
+			.join('');
+
+		return `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>QR Codes - ${eventName}</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		@page {
+			size: letter;
+			margin: 0.5in;
+		}
+
+		body {
+			font-family: system-ui, -apple-system, sans-serif;
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 0;
+		}
+
+		.card {
+			border: 2px dashed #ccc;
+			padding: 12px;
+			text-align: center;
+			page-break-inside: avoid;
+			height: 2.5in;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.card img {
+			width: 120px;
+			height: 120px;
+		}
+
+		.card-number {
+			font-size: 14px;
+			font-weight: bold;
+			color: #4a3728;
+			margin-top: 8px;
+		}
+
+		.instruction {
+			font-size: 12px;
+			color: #666;
+			margin-top: 4px;
+		}
+
+		@media print {
+			.no-print {
+				display: none;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="no-print" style="padding: 16px; background: #f5f5f5; margin-bottom: 16px;">
+		<strong>${eventName}</strong> — ${voters.length} QR codes
+		<button onclick="window.print()" style="margin-left: 16px; padding: 8px 16px; cursor: pointer;">
+			Print
+		</button>
+	</div>
+	<div class="grid">
+		${cards}
+	</div>
+</body>
+</html>`;
+	}
 </script>
 
 <svelte:head>
@@ -229,6 +393,46 @@
 			<button type="button" onclick={generateTestVoterLink} class="btn-primary">
 				Generate Test Link
 			</button>
+		{/if}
+	</div>
+
+	<!-- QR Code Generation -->
+	<div class="card">
+		<h2 class="text-lg font-semibold text-brown-900 mb-3">Generate QR Codes</h2>
+		<p class="text-sm text-muted mb-4">
+			Generate printable QR code cards for voters. Each card contains a unique voting link.
+		</p>
+		<div class="flex items-end gap-3">
+			<div class="flex-1 max-w-32">
+				<label for="qr-count" class="block text-sm text-muted mb-1">Number of cards</label>
+				<input
+					id="qr-count"
+					type="number"
+					bind:value={qrCount}
+					min="1"
+					max="500"
+					class="input w-full"
+				/>
+			</div>
+			<button
+				type="button"
+				onclick={generateQRCodes}
+				disabled={isGeneratingQR || qrCount < 1 || qrCount > 500}
+				class="btn-primary flex items-center gap-2"
+			>
+				{#if isGeneratingQR}
+					<RefreshCw class="w-4 h-4 animate-spin" />
+					<span>Generating...</span>
+				{:else}
+					<QrCode class="w-4 h-4" />
+					<span>Generate</span>
+				{/if}
+			</button>
+		</div>
+		{#if qrCount > 100}
+			<p class="text-sm text-amber-600 mt-2">
+				Generating {qrCount} codes may take a moment.
+			</p>
 		{/if}
 	</div>
 

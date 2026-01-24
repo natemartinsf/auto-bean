@@ -33,6 +33,7 @@
 	"dependencies": {
 		"@supabase/ssr": "^0.8.0",
 		"canvas-confetti": "^1.9.4",
-		"lucide-svelte": "^0.562.0"
+		"lucide-svelte": "^0.562.0",
+		"qr-code-styling": "^1.9.2"
 	}
 }
