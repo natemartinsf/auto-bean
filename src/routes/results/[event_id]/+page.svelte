@@ -180,30 +180,24 @@
 				</div>
 			</div>
 
-			<!-- Podium section -->
+			<!-- Podium section (new reveals appear at top, pushing others down) -->
 			<div class="space-y-6">
-				<!-- 3rd Place (Stage 2+) -->
-				{#if revealStage >= 2}
-					{#if thirdPlace.length > 0}
-						<div class="place-reveal space-y-4" class:animate-entrance={animatedPlaces.has(3)}>
-							{#each thirdPlace as beer (beer.id)}
-								<div class="podium-card podium-third">
-									<div class="podium-medal">🥉</div>
-									<div class="podium-rank">3rd Place{thirdPlace.length > 1 ? ' (Tied)' : ''}</div>
-									<div class="podium-name">{beer.name}</div>
-									<div class="podium-brewer">by {beer.brewer}</div>
-									<div class="podium-stats">
-										<span class="podium-points">{beer.totalPoints} pts</span>
-										<span class="podium-votes">{beer.voterCount} voters</span>
-									</div>
+				<!-- 1st Place (Stage 4) -->
+				{#if revealStage >= 4}
+					<div class="place-reveal space-y-4" class:animate-entrance={animatedPlaces.has(1)}>
+						{#each firstPlace as beer (beer.id)}
+							<div class="podium-card podium-first">
+								<div class="podium-medal">🥇</div>
+								<div class="podium-rank">1st Place{firstPlace.length > 1 ? ' (Tied)' : ''}</div>
+								<div class="podium-name">{beer.name}</div>
+								<div class="podium-brewer">by {beer.brewer}</div>
+								<div class="podium-stats">
+									<span class="podium-points">{beer.totalPoints} pts</span>
+									<span class="podium-votes">{beer.voterCount} voters</span>
 								</div>
-							{/each}
-						</div>
-					{:else}
-						<div class="place-reveal text-center py-4 text-muted" class:animate-entrance={animatedPlaces.has(3)}>
-							No 3rd place — tighter competition at the top!
-						</div>
-					{/if}
+							</div>
+						{/each}
+					</div>
 				{/if}
 
 				<!-- 2nd Place (Stage 3+) -->
@@ -230,50 +224,56 @@
 					{/if}
 				{/if}
 
-				<!-- 1st Place (Stage 4) -->
-				{#if revealStage >= 4}
-					<div class="place-reveal space-y-4" class:animate-entrance={animatedPlaces.has(1)}>
-						{#each firstPlace as beer (beer.id)}
-							<div class="podium-card podium-first">
-								<div class="podium-medal">🥇</div>
-								<div class="podium-rank">1st Place{firstPlace.length > 1 ? ' (Tied)' : ''}</div>
-								<div class="podium-name">{beer.name}</div>
-								<div class="podium-brewer">by {beer.brewer}</div>
-								<div class="podium-stats">
-									<span class="podium-points">{beer.totalPoints} pts</span>
-									<span class="podium-votes">{beer.voterCount} voters</span>
+				<!-- 3rd Place (Stage 2+) -->
+				{#if revealStage >= 2}
+					{#if thirdPlace.length > 0}
+						<div class="place-reveal space-y-4" class:animate-entrance={animatedPlaces.has(3)}>
+							{#each thirdPlace as beer (beer.id)}
+								<div class="podium-card podium-third">
+									<div class="podium-medal">🥉</div>
+									<div class="podium-rank">3rd Place{thirdPlace.length > 1 ? ' (Tied)' : ''}</div>
+									<div class="podium-name">{beer.name}</div>
+									<div class="podium-brewer">by {beer.brewer}</div>
+									<div class="podium-stats">
+										<span class="podium-points">{beer.totalPoints} pts</span>
+										<span class="podium-votes">{beer.voterCount} voters</span>
+									</div>
 								</div>
-							</div>
-						{/each}
-					</div>
-
-					<!-- Rest of rankings (4th place onward) -->
-					{#if restOfRankings.length > 0}
-						<div class="mt-12">
-							<h2 class="text-xl font-semibold text-brown-800 mb-4 text-center">Full Rankings</h2>
-							<div class="space-y-3">
-								{#each scoreTiers().filter((t) => t.position > 3) as tier (tier.position)}
-									{#each tier.beers as beer (beer.id)}
-										<div class="card flex items-center gap-4">
-											<div
-												class="w-10 h-10 rounded-full bg-brown-100 flex items-center justify-center font-bold text-brown-600"
-											>
-												{tier.position}
-											</div>
-											<div class="flex-1">
-												<div class="font-medium text-brown-900">{beer.name}</div>
-												<div class="text-sm text-muted">by {beer.brewer}</div>
-											</div>
-											<div class="text-right">
-												<div class="font-semibold text-amber-700">{beer.totalPoints} pts</div>
-												<div class="text-xs text-muted">{beer.voterCount} voters</div>
-											</div>
-										</div>
-									{/each}
-								{/each}
-							</div>
+							{/each}
+						</div>
+					{:else}
+						<div class="place-reveal text-center py-4 text-muted" class:animate-entrance={animatedPlaces.has(3)}>
+							No 3rd place — tighter competition at the top!
 						</div>
 					{/if}
+				{/if}
+
+				<!-- Rest of rankings (4th place onward, shown after 1st place reveal) -->
+				{#if revealStage >= 4 && restOfRankings.length > 0}
+					<div class="mt-12">
+						<h2 class="text-xl font-semibold text-brown-800 mb-4 text-center">Full Rankings</h2>
+						<div class="space-y-3">
+							{#each scoreTiers().filter((t) => t.position > 3) as tier (tier.position)}
+								{#each tier.beers as beer (beer.id)}
+									<div class="card flex items-center gap-4">
+										<div
+											class="w-10 h-10 rounded-full bg-brown-100 flex items-center justify-center font-bold text-brown-600"
+										>
+											{tier.position}
+										</div>
+										<div class="flex-1">
+											<div class="font-medium text-brown-900">{beer.name}</div>
+											<div class="text-sm text-muted">by {beer.brewer}</div>
+										</div>
+										<div class="text-right">
+											<div class="font-semibold text-amber-700">{beer.totalPoints} pts</div>
+											<div class="text-xs text-muted">{beer.voterCount} voters</div>
+										</div>
+									</div>
+								{/each}
+							{/each}
+						</div>
+					</div>
 				{/if}
 			</div>
 
