@@ -153,18 +153,14 @@
 
 	// Handle notes change (update local state, save on blur)
 	function handleNotesChange(beerId: string, value: string) {
-		if (!feedbackByBeer[beerId]) {
-			feedbackByBeer[beerId] = { notes: '', shareWithBrewer: false };
-		}
-		feedbackByBeer[beerId].notes = value;
+		const current = feedbackByBeer[beerId] || { notes: '', shareWithBrewer: false };
+		feedbackByBeer[beerId] = { ...current, notes: value };
 	}
 
 	// Handle checkbox change (update local state and save immediately)
 	async function handleShareChange(beerId: string, checked: boolean) {
-		if (!feedbackByBeer[beerId]) {
-			feedbackByBeer[beerId] = { notes: '', shareWithBrewer: false };
-		}
-		feedbackByBeer[beerId].shareWithBrewer = checked;
+		const current = feedbackByBeer[beerId] || { notes: '', shareWithBrewer: false };
+		feedbackByBeer[beerId] = { ...current, shareWithBrewer: checked };
 		await saveFeedback(beerId);
 	}
 
