@@ -18,6 +18,12 @@
 	let testVoterUrl = $state('');
 	let voteTotals = $state<Record<string, { totalPoints: number; voterCount: number }>>({});
 	let isRefreshingVotes = $state(false);
+	let blindTasting = $state(false);
+
+	// Sync blind tasting state with props (only on initial load or navigation)
+	$effect(() => {
+		blindTasting = data.event.blind_tasting ?? false;
+	});
 
 	// Sync state with props when data changes (e.g., after form submissions or navigation)
 	$effect(() => {
@@ -454,18 +460,30 @@
 		<p class="text-sm text-muted mb-4">
 			When enabled, brewer names are hidden from voters during voting. Brewers are still revealed on the results page.
 		</p>
-		<form method="POST" action="?/toggleBlindTasting" use:enhance>
+		<form
+			method="POST"
+			action="?/toggleBlindTasting"
+			use:enhance={() => {
+				// Optimistic update - toggle immediately
+				blindTasting = !blindTasting;
+				return async ({ result }) => {
+					if (result.type === 'failure') {
+						// Revert on error
+						blindTasting = !blindTasting;
+					}
+					// Don't call update() - we already updated optimistically
+				};
+			}}
+		>
 			<label class="flex items-center gap-3 cursor-pointer">
 				<input
 					type="checkbox"
 					name="enabled"
-					checked={data.event.blind_tasting ?? false}
+					checked={blindTasting}
 					onchange={(e) => e.currentTarget.form?.requestSubmit()}
 					class="w-5 h-5 rounded border-brown-300 text-amber-600 focus:ring-amber-500"
 				/>
-				<span class="text-brown-900">
-					{data.event.blind_tasting ? 'Blind tasting enabled' : 'Blind tasting disabled'}
-				</span>
+				<span class="text-brown-900">Blind Tasting Mode</span>
 			</label>
 		</form>
 		{#if form?.error && form?.action === 'toggleBlindTasting'}
