@@ -90,6 +90,48 @@ npm run gen:types
 
 The project ref is the subdomain from your Supabase URL (e.g., `abcd1234` from `https://abcd1234.supabase.co`).
 
+## Storage Setup (Event Logos)
+
+Event logos are stored in Supabase Storage. Create the bucket and policies manually:
+
+### 1. Create Storage Bucket
+
+1. Go to Supabase Dashboard → Storage
+2. Click "New bucket"
+3. Name: `event-logos`
+4. Public bucket: **Yes** (logos need public read access)
+5. Click "Create bucket"
+
+### 2. Configure Storage Policies
+
+In the bucket settings, add these RLS policies:
+
+**Public Read (SELECT):**
+```sql
+-- Policy name: "Public read access"
+-- Target: SELECT
+-- Check expression:
+true
+```
+
+**Authenticated Upload (INSERT):**
+```sql
+-- Policy name: "Authenticated users can upload"
+-- Target: INSERT
+-- Check expression:
+(auth.role() = 'authenticated')
+```
+
+**Authenticated Delete (DELETE):**
+```sql
+-- Policy name: "Authenticated users can delete"
+-- Target: DELETE
+-- Check expression:
+(auth.role() = 'authenticated')
+```
+
+Note: The admin check is handled at the application level (only admins can access the upload UI).
+
 ## Documentation
 
 - `project-spec.md` - Original project specification
