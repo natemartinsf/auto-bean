@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { Files, Check } from 'lucide-svelte';
+	import { Files, Check, RefreshCw } from 'lucide-svelte';
 	import type { Beer } from '$lib/types';
 
 	type BeerWithToken = Beer & { brewer_tokens: { id: string } | null };
@@ -15,12 +15,66 @@
 	let copiedFeedbackId = $state<string | null>(null);
 	let beers = $state<BeerWithToken[]>(data.beers);
 	let testVoterUrl = $state('');
+	let voteTotals = $state<Record<string, { totalPoints: number; voterCount: number }>>(data.voteTotals);
+	let isRefreshingVotes = $state(false);
+	let lastRefreshed = $state<Date>(new Date());
 
 	const manageUrl = $derived(`${$page.url.origin}/manage/${data.event.manage_token}`);
 	const resultsUrl = $derived(`${$page.url.origin}/results/${data.event.id}`);
 
-	// Real-time subscription for beer updates
+	async function refreshVoteTotals() {
+		isRefreshingVotes = true;
+		try {
+			const beerIds = beers.map((b) => b.id);
+			if (beerIds.length === 0) {
+				voteTotals = {};
+				lastRefreshed = new Date();
+				return;
+			}
+
+			const { data: voteData, error } = await data.supabase
+				.from('votes')
+				.select('beer_id, points, voter_id')
+				.in('beer_id', beerIds);
+
+			if (error) {
+				console.error('Error fetching vote totals:', error);
+				return;
+			}
+
+			const newTotals: Record<string, { totalPoints: number; voterCount: number }> = {};
+			const votersByBeer: Record<string, Set<string>> = {};
+
+			for (const vote of voteData || []) {
+				if (!newTotals[vote.beer_id]) {
+					newTotals[vote.beer_id] = { totalPoints: 0, voterCount: 0 };
+				}
+				newTotals[vote.beer_id].totalPoints += vote.points;
+
+				if (!votersByBeer[vote.beer_id]) {
+					votersByBeer[vote.beer_id] = new Set();
+				}
+				votersByBeer[vote.beer_id].add(vote.voter_id);
+			}
+
+			for (const beerId of Object.keys(votersByBeer)) {
+				if (newTotals[beerId]) {
+					newTotals[beerId].voterCount = votersByBeer[beerId].size;
+				}
+			}
+
+			voteTotals = newTotals;
+			lastRefreshed = new Date();
+		} finally {
+			isRefreshingVotes = false;
+		}
+	}
+
+	// Real-time subscription for beer updates + vote polling
 	onMount(() => {
+		// Poll vote totals every 10 seconds
+		const pollInterval = setInterval(refreshVoteTotals, 10000);
+
 		const channel = data.supabase
 			.channel('admin-beers-changes')
 			.on(
@@ -64,6 +118,7 @@
 			.subscribe();
 
 		return () => {
+			clearInterval(pollInterval);
 			data.supabase.removeChannel(channel);
 		};
 	});
@@ -246,7 +301,24 @@
 
 	<!-- Beers List -->
 	<div class="card">
-		<h2 class="text-lg font-semibold text-brown-900 mb-4">Beers ({beers.length})</h2>
+		<div class="flex items-center justify-between mb-4">
+			<h2 class="text-lg font-semibold text-brown-900">Beers ({beers.length})</h2>
+			<div class="flex items-center gap-2">
+				<span class="text-xs text-muted">
+					Updated {lastRefreshed.toLocaleTimeString()}
+				</span>
+				<button
+					type="button"
+					onclick={refreshVoteTotals}
+					disabled={isRefreshingVotes}
+					class="flex items-center gap-1.5 px-2 py-1 rounded text-sm text-brown-600 hover:text-brown-800 hover:bg-brown-100 transition-colors disabled:opacity-50"
+					title="Refresh vote totals"
+				>
+					<RefreshCw class="w-4 h-4 {isRefreshingVotes ? 'animate-spin' : ''}" />
+					<span>Refresh</span>
+				</button>
+			</div>
+		</div>
 		{#if form?.error && form?.action === 'deleteBeer'}
 			<p class="text-red-600 text-sm mb-3">{form.error}</p>
 		{/if}
@@ -255,14 +327,26 @@
 		{:else}
 			<ul class="divide-y divide-brown-100">
 				{#each beers as beer (beer.id)}
+					{@const beerVotes = voteTotals[beer.id]}
 					<li class="py-3">
 						<div class="flex items-center justify-between">
-							<div>
-								<span class="font-medium text-brown-900">{beer.name}</span>
-								<span class="text-muted ml-2">by {beer.brewer}</span>
-								{#if beer.style}
-									<span class="text-sm text-muted ml-2">({beer.style})</span>
-								{/if}
+							<div class="flex-1 min-w-0">
+								<div class="flex items-center gap-2 flex-wrap">
+									<span class="font-medium text-brown-900">{beer.name}</span>
+									<span class="text-muted">by {beer.brewer}</span>
+									{#if beer.style}
+										<span class="text-sm text-muted">({beer.style})</span>
+									{/if}
+								</div>
+								<div class="text-sm text-muted mt-1">
+									{#if beerVotes}
+										<span class="text-brown-700 font-medium">{beerVotes.totalPoints} pts</span>
+										<span class="mx-1">·</span>
+										<span>{beerVotes.voterCount} voter{beerVotes.voterCount === 1 ? '' : 's'}</span>
+									{:else}
+										<span class="text-brown-500">No votes yet</span>
+									{/if}
+								</div>
 							</div>
 							<form
 								method="POST"

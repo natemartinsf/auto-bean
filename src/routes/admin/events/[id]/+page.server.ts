@@ -46,6 +46,42 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 		console.error('Error fetching beers:', beersError);
 	}
 
+	// Get vote totals for each beer
+	const beerIds = (beers || []).map((b) => b.id);
+	let voteTotals: Record<string, { totalPoints: number; voterCount: number }> = {};
+
+	if (beerIds.length > 0) {
+		const { data: voteData, error: voteError } = await locals.supabase
+			.from('votes')
+			.select('beer_id, points, voter_id')
+			.in('beer_id', beerIds);
+
+		if (voteError) {
+			console.error('Error fetching vote totals:', voteError);
+		} else if (voteData) {
+			// Aggregate votes by beer_id
+			for (const vote of voteData) {
+				if (!voteTotals[vote.beer_id]) {
+					voteTotals[vote.beer_id] = { totalPoints: 0, voterCount: 0 };
+				}
+				voteTotals[vote.beer_id].totalPoints += vote.points;
+			}
+			// Count distinct voters per beer
+			const votersByBeer: Record<string, Set<string>> = {};
+			for (const vote of voteData) {
+				if (!votersByBeer[vote.beer_id]) {
+					votersByBeer[vote.beer_id] = new Set();
+				}
+				votersByBeer[vote.beer_id].add(vote.voter_id);
+			}
+			for (const beerId of Object.keys(votersByBeer)) {
+				if (voteTotals[beerId]) {
+					voteTotals[beerId].voterCount = votersByBeer[beerId].size;
+				}
+			}
+		}
+	}
+
 	// Get admins assigned to this event (with their info)
 	const { data: eventAdmins, error: eventAdminsError } = await locals.supabase
 		.from('event_admins')
@@ -76,7 +112,8 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 		beers: (beers || []) as Beer[],
 		assignedAdmins,
 		allAdmins: (allAdmins || []) as Pick<Admin, 'id' | 'email'>[],
-		currentAdminId
+		currentAdminId,
+		voteTotals
 	};
 };
 
