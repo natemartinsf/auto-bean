@@ -267,7 +267,7 @@
 					<div class="card">
 						<div class="font-medium text-brown-900 text-lg">{beer.name}</div>
 						<div class="text-sm text-muted mb-3">
-							{#if beer.brewer}
+							{#if beer.brewer && !data.event.blind_tasting}
 								by {beer.brewer}
 								{#if beer.style}
 									<span class="mx-1">·</span>
