@@ -432,6 +432,89 @@ src/
   - Graceful empty state if no feedback shared
   - Real-time subscription: new feedback appears live as voters submit
 
+### Phase 9: Polish & Customization
+
+#### Task 9.1: Generate Supabase TypeScript Types
+- **What**: Set up `supabase gen types` workflow to replace manual types
+- **Acceptance criteria**:
+  - Supabase CLI installed as dev dependency
+  - `npm run gen:types` script generates `src/lib/database.types.ts`
+  - `src/lib/types.ts` updated to re-export from generated types (preserves imports)
+  - `app.d.ts` updated to use generated `Database` type
+  - `npm run check` passes with no type errors
+  - Document type regeneration in README (run after schema changes)
+
+#### Task 9.2: Fix Supabase Auth Security Warning
+- **What**: Replace `getSession()` with `getUser()` for server-side auth checks
+- **Acceptance criteria**:
+  - `hooks.server.ts` or auth helper uses `supabase.auth.getUser()` instead of `getSession()`
+  - Console warning "Using the user object as returned from supabase.auth.getSession()..." no longer appears
+  - Admin routes still properly authenticated
+  - Session data still available for client-side use where needed
+
+#### Task 9.3: Fix Svelte 5 Reactivity Warnings
+- **What**: Fix `state_referenced_locally` warnings in admin event detail page
+- **Acceptance criteria**:
+  - `data.beers` and `data.voteTotals` properly reactive to prop changes
+  - Use `$derived` or `$effect` where appropriate instead of `$state` initialization
+  - No Svelte compiler warnings in dev console
+  - Real-time updates still work correctly
+
+#### Task 9.4: Optional Brewer Name (Anonymous Competitions)
+- **What**: Make brewer name optional for anonymous/blind tasting competitions
+- **Acceptance criteria**:
+  - Migration changes `brewer TEXT NOT NULL` to `brewer TEXT` (nullable)
+  - Add beer form (manage page) makes brewer field optional
+  - Voter page conditionally displays "by {brewer}" only when brewer is set
+  - Results page conditionally displays brewer
+  - Admin beer list handles null brewer gracefully
+
+#### Task 9.5: Event Logo - Database & Storage Setup
+- **What**: Add logo support to events table and configure Supabase storage
+- **Acceptance criteria**:
+  - Migration adds `logo_url TEXT` column to events table
+  - TypeScript types regenerated to include new column
+  - Supabase storage bucket `event-logos` created with appropriate policies
+  - Public read access for logos (displayed on voter/results pages)
+  - Authenticated write access for admins
+
+#### Task 9.6: Event Logo - Admin Upload UI
+- **What**: Add logo upload/management to admin event detail page
+- **Acceptance criteria**:
+  - Image upload input (accepts PNG, JPG, SVG)
+  - Preview of current logo if set
+  - Upload to Supabase storage, save URL to event record
+  - Remove logo option
+  - Reasonable file size limit (e.g., 500KB)
+  - Loading state during upload
+
+#### Task 9.7: Event Logo - Display on Public Pages
+- **What**: Show event logo on voter page and results page
+- **Acceptance criteria**:
+  - Logo displayed in header/prominent position on voter page
+  - Logo displayed on results page (ceremony and final results)
+  - Graceful fallback if no logo set (no broken image)
+  - Appropriate sizing/responsive behavior
+
+#### Task 9.8: QR Code Logo Customization
+- **What**: Embed event logo in center of generated QR codes
+- **Acceptance criteria**:
+  - If event has logo, QR codes include it centered
+  - QR error correction level increased to compensate (L → M or H)
+  - Logo sized appropriately (not too large to break scanning)
+  - Fallback to plain QR if no event logo
+  - QR codes still scan reliably with logo embedded
+
+#### Task 9.9: UI Polish Pass
+- **What**: Visual refinements based on testing feedback
+- **Note**: This is a placeholder task. Specific items TBD after user testing.
+- **Potential areas**:
+  - Spacing/layout adjustments
+  - Loading states
+  - Error states
+  - Mobile responsiveness tweaks
+  - Animation/transition polish
+
 ---
 
 ## Open Questions
