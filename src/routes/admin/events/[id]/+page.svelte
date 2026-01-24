@@ -200,7 +200,7 @@
 			}
 
 			// Build printable HTML
-			const html = buildPrintableHtml(voters, qrDataUrls, data.event.name);
+			const html = buildPrintableHtml(voters, qrDataUrls, data.event.name, data.event.id);
 
 			// Open in new tab
 			const newWindow = window.open('', '_blank');
@@ -225,7 +225,8 @@
 	function buildPrintableHtml(
 		voters: { uuid: string; number: number }[],
 		qrDataUrls: string[],
-		eventName: string
+		eventName: string,
+		eventId: string
 	): string {
 		const cards = voters
 			.map(
@@ -234,6 +235,7 @@
 				<img src="${qrDataUrls[i]}" alt="QR Code ${voter.number}" />
 				<div class="card-number">#${voter.number}</div>
 				<div class="instruction">Scan to vote</div>
+				<div class="url">/vote/${eventId}/${voter.uuid}</div>
 			</div>
 		`
 			)
@@ -294,6 +296,14 @@
 			font-size: 12px;
 			color: #666;
 			margin-top: 4px;
+		}
+
+		.url {
+			font-size: 8px;
+			color: #999;
+			margin-top: 4px;
+			word-break: break-all;
+			max-width: 100%;
 		}
 
 		@media print {
