@@ -75,6 +75,21 @@ After this, you can add more admins through the admin UI.
 
 QR codes are generated from the admin interface. Select an event, click "Generate QR Codes", enter a count, and download the printable HTML sheet.
 
+## TypeScript Types
+
+Database types are auto-generated from the Supabase schema. After making schema changes:
+
+```bash
+# One-time setup (if not already done)
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+
+# Regenerate types after schema changes
+npm run gen:types
+```
+
+The project ref is the subdomain from your Supabase URL (e.g., `abcd1234` from `https://abcd1234.supabase.co`).
+
 ## Documentation
 
 - `project-spec.md` - Original project specification
