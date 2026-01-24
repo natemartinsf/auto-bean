@@ -460,14 +460,25 @@ src/
   - No Svelte compiler warnings in dev console
   - Real-time updates still work correctly
 
-#### Task 9.4: Optional Brewer Name (Anonymous Competitions)
-- **What**: Make brewer name optional for anonymous/blind tasting competitions
+#### Task 9.4: Optional Brewer Name ✅
+- **What**: Make brewer name optional for genuinely anonymous entries
 - **Acceptance criteria**:
   - Migration changes `brewer TEXT NOT NULL` to `brewer TEXT` (nullable)
   - Add beer form (manage page) makes brewer field optional
   - Voter page conditionally displays "by {brewer}" only when brewer is set
   - Results page conditionally displays brewer
   - Admin beer list handles null brewer gracefully
+
+#### Task 9.4b: Blind Tasting Mode
+- **What**: Per-event toggle that hides brewer names from voters during voting (even when entered)
+- **Acceptance criteria**:
+  - Migration adds `blind_tasting BOOLEAN DEFAULT FALSE` to events table
+  - TypeScript types regenerated to include new column
+  - Admin event detail page: toggle to enable/disable blind tasting
+  - Voter page: hide brewer name when `event.blind_tasting = true` (show only beer name and style)
+  - Results page: always show brewer name (reveal after voting ends)
+  - Admin pages: always show brewer name regardless of blind_tasting setting
+  - Manage page (tap volunteers): always show brewer name (they need to see what they entered)
 
 #### Task 9.5: Event Logo - Database & Storage Setup
 - **What**: Add logo support to events table and configure Supabase storage
