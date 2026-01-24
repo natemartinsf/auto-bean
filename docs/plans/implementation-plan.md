@@ -406,7 +406,15 @@ src/
   - 12 cards per page, 3x4 grid, dashed borders
   - Each card: QR code, card number, scan instructions
 
-#### Task 7.2: Remove CLI Script
+#### Task 7.2: Customize QR Card Design (Future)
+- **What**: Enhance QR code cards with more customization
+- **Ideas**:
+  - Add event name/logo to cards
+  - Custom colors/branding options
+  - Add logo to QR code center (qr-code-styling supports this)
+  - Different card layouts
+
+#### Task 7.3: Remove CLI Script
 - **What**: Delete `scripts/generate-voter-qrcodes.js`, update docs
 - **Acceptance criteria**:
   - Script removed
