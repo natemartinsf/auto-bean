@@ -101,6 +101,12 @@
 			);
 
 			if (error) {
+				// Ignore AbortError - this happens when rapid clicks cause request cancellation.
+				// The optimistic UI update is still valid since a subsequent request will succeed.
+				if (error.message?.includes('AbortError') || error.name === 'AbortError') {
+					return;
+				}
+
 				// Revert on failure
 				votesByBeer[beerId] = oldPoints;
 
@@ -112,6 +118,15 @@
 				}
 				console.error('Error saving vote:', error);
 			}
+		} catch (err) {
+			// Catch AbortError thrown as exception (different Supabase versions handle this differently)
+			if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('aborted'))) {
+				return;
+			}
+			// Revert on unexpected error
+			votesByBeer[beerId] = oldPoints;
+			saveError = 'Failed to save vote. Please try again.';
+			console.error('Error saving vote:', err);
 		} finally {
 			saving = false;
 		}
