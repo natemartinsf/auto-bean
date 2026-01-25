@@ -3,14 +3,12 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { LayoutLoad } from './$types';
 import type { Database } from '$lib/types';
 
-export const load: LayoutLoad = async ({ data, depends, fetch }) => {
+export const load: LayoutLoad = async ({ data, depends }) => {
 	depends('supabase:auth');
 
-	const supabase = createBrowserClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
-		global: {
-			fetch
-		}
-	});
+	// Don't pass SvelteKit's fetch - it uses AbortController that can cancel
+	// requests during hydration. Native browser fetch works fine for the client.
+	const supabase = createBrowserClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 	// Always use the validated session from +layout.server.ts
 	// The server validates via getUser() in safeGetSession
