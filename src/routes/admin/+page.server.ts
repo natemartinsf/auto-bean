@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import type { Event } from '$lib/types';
+import { generateShortCode } from '$lib/short-codes';
 
 export const load: PageServerLoad = async ({ parent, locals }) => {
 	const parentData = await parent();
@@ -18,7 +19,7 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
 
 	if (error) {
 		console.error('Error fetching events:', error);
-		return { events: [] as Event[], error: error.message };
+		return { events: [] as Event[], eventCodeMap: {} as Record<string, string>, error: error.message };
 	}
 
 	// Extract the events from the join result
@@ -27,8 +28,27 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
 		.filter(Boolean)
 		.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
 
+	// Load event-type short codes for linking
+	const eventIds = events.map(e => e.id);
+	const eventCodeMap: Record<string, string> = {};
+
+	if (eventIds.length > 0) {
+		const { data: codes } = await locals.supabase
+			.from('short_codes')
+			.select('code, target_id')
+			.eq('target_type', 'event')
+			.in('target_id', eventIds);
+
+		if (codes) {
+			for (const c of codes) {
+				eventCodeMap[c.target_id] = c.code;
+			}
+		}
+	}
+
 	return {
-		events
+		events,
+		eventCodeMap
 	};
 };
 
@@ -93,6 +113,19 @@ export const actions: Actions = {
 			// Event was created but assignment failed - try to clean up
 			await locals.supabase.from('events').delete().eq('id', event.id);
 			return fail(500, { error: 'Failed to assign you to the event' });
+		}
+
+		// Generate short codes for the event (event + manage types)
+		const { error: codeError } = await locals.supabase
+			.from('short_codes')
+			.insert([
+				{ code: generateShortCode(), target_type: 'event', target_id: event.id },
+				{ code: generateShortCode(), target_type: 'manage', target_id: event.id }
+			]);
+
+		if (codeError) {
+			console.error('Error creating short codes:', codeError);
+			// Non-fatal: event exists but codes failed. Log and continue.
 		}
 
 		return { success: true, eventId: event.id };

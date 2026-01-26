@@ -109,7 +109,7 @@
 			<div class="space-y-3">
 				{#each data.events as event}
 					<div class="card-interactive flex items-center justify-between">
-						<a href="/admin/events/{event.id}" class="flex-1 no-underline">
+						<a href="/admin/events/{data.eventCodeMap[event.id] ?? event.id}" class="flex-1 no-underline">
 							<h3 class="font-medium text-brown-900">
 								{event.name}
 							</h3>
