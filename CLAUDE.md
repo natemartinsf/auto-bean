@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-People's Choice Beer Voting - a SvelteKit app for homebrew competition voting. Voters get QR cards with unique UUIDs, allocate points across beers (configurable per event), and results are revealed live at the awards ceremony.
+People's Choice Beer Voting - a SvelteKit app for homebrew competition voting. Voters get QR cards with short-code URLs, allocate points across beers (configurable per event), and results are revealed live at the awards ceremony.
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@ npm run preview      # Preview production build
 
 ### QR Code Generation
 
-QR codes are generated from the admin UI (no CLI script). Admin selects event, enters count, downloads printable HTML sheet.
+QR codes are generated from the admin UI (no CLI script). Admin selects event, enters count, downloads printable HTML sheet. QR URLs use short codes (e.g. `/vote/xk9mr2pq/yt3nb7wz`).
 
 ## Architecture
 
@@ -35,24 +35,22 @@ QR codes are generated from the admin UI (no CLI script). Admin selects event, e
 - **votes**: voter_id, beer_id, points
 - **feedback**: voter_id, beer_id, notes, share_with_brewer
 - **brewer_tokens**: id (UUID for URL), beer_id
+- **short_codes**: code (8-char a-z0-9), target_type (event/voter/manage/brewer), target_id (UUID)
 - **admins**: id, user_id, email
 - **event_admins**: event_id, admin_id (admins only see assigned events)
 
 ### Key Routes (SvelteKit)
 
-- `/vote/[event_id]/[voter_uuid]` - Voter's point allocation interface
+- `/vote/[event_code]/[voter_code]` - Voter's point allocation interface
 - `/admin` - Session-authenticated event/beer management
-- `/manage/[manage_token]` - Magic URL for tap volunteers to add beers
-- `/results/[event_id]` - Leaderboard (revealed by admin)
-- `/feedback/[brewer_token]` - Brewer's feedback view (real-time)
+- `/admin/events/[code]` - Event detail (uses event short code)
+- `/manage/[code]` - Magic URL for tap volunteers to add beers (manage short code)
+- `/results/[code]` - Leaderboard (event short code, revealed by admin)
+- `/feedback/[code]` - Brewer's feedback view (brewer short code, real-time)
 
 ### Auth Model
 
-Voters use UUID-in-URL authentication. No login flow - voter records are created lazily on first page load via upsert:
-
-```javascript
-await supabase.from('voters').upsert({ id: voter_uuid, event_id }).select().single()
-```
+Voters use short-code URLs (8-char alphanumeric codes that resolve to UUIDs via `short_codes` table). No login flow - voter records are created lazily on first page load via upsert. Short codes are generated at QR print time; the voter UUID may not exist in the `voters` table until first visit.
 
 Admin uses Supabase session auth with RLS policies.
 
