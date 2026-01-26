@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import type { Event, Beer } from '$lib/types';
+import { resolveShortCode } from '$lib/short-codes';
 
 interface RankedBeer extends Beer {
 	totalPoints: number;
@@ -9,7 +10,11 @@ interface RankedBeer extends Beer {
 }
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const eventId = params.event_id;
+	const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
+
+	if (!eventId) {
+		throw error(404, 'Event not found');
+	}
 
 	// Get event
 	const { data: event, error: eventError } = await locals.supabase
