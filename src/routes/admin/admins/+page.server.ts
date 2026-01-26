@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
 };
 
 export const actions: Actions = {
-	add: async ({ request, locals }) => {
+	add: async ({ request, locals, url }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) {
 			return fail(403, { error: 'Not authorized' });
@@ -76,7 +76,9 @@ export const actions: Actions = {
 			userId = existingUser.id;
 		} else {
 			// Invite new user
-			const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+			const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+				redirectTo: `${url.origin}/auth/callback?next=set-password`
+			});
 
 			if (inviteError) {
 				console.error('Error inviting user:', inviteError);
