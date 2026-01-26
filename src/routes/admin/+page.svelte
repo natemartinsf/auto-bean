@@ -65,6 +65,7 @@
 						name="date"
 						bind:value={date}
 						class="input w-full"
+						class:text-brown-400={!date}
 					/>
 				</div>
 
