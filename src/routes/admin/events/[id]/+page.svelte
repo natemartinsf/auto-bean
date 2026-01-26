@@ -727,10 +727,10 @@
 		{#if beers.length === 0}
 			<p class="text-muted">No beers added yet. Share the manage URL with tap volunteers to add beers.</p>
 		{:else}
-			<ul class="divide-y divide-brown-100">
+			<div class="space-y-2">
 				{#each beers as beer (beer.id)}
 					{@const beerVotes = voteTotals[beer.id]}
-					<li class="py-3">
+					<div class="rounded-lg border border-brown-100 bg-white/60 p-3">
 						<div class="flex items-center justify-between">
 							<div class="flex-1 min-w-0">
 								<div class="flex items-center gap-2 flex-wrap">
@@ -752,49 +752,46 @@
 									{/if}
 								</div>
 							</div>
-							<form
-								method="POST"
-								action="?/deleteBeer"
-								use:enhance={() => {
-									if (!confirm(`Delete "${beer.name}"? This will also delete all votes and feedback for this beer.`)) {
-										return () => {};
-									}
-									return async ({ update }) => {
-										await update();
-									};
-								}}
-							>
-								<input type="hidden" name="beerId" value={beer.id} />
-								<button type="submit" class="btn-ghost text-red-600 hover:text-red-700 text-sm">
-									Delete
-								</button>
-							</form>
-						</div>
-						{#if beer.brewer_tokens?.id}
-							<div class="mt-2 flex items-center gap-2">
-								<span class="text-xs text-muted">Feedback URL:</span>
-								<code class="text-xs text-brown-600 bg-brown-50 px-1.5 py-0.5 rounded truncate max-w-xs">
-									/feedback/{beer.brewer_tokens.id}
-								</code>
-								<button
-									type="button"
-									onclick={() => copyFeedbackUrl(beer.id, beer.brewer_tokens!.id)}
-									class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs text-brown-600 hover:text-brown-800 hover:bg-brown-100 transition-colors"
-									title={copiedFeedbackId === beer.id ? 'Copied!' : 'Copy feedback URL'}
+							<div class="flex items-center gap-1">
+								{#if beer.brewer_tokens?.id}
+									<button
+										type="button"
+										onclick={() => copyFeedbackUrl(beer.id, beer.brewer_tokens!.id)}
+										class="flex items-center gap-1 px-2 py-1 rounded text-xs text-brown-600 hover:text-brown-800 hover:bg-brown-100 transition-colors"
+										title={copiedFeedbackId === beer.id ? 'Copied!' : 'Copy feedback URL'}
+									>
+										{#if copiedFeedbackId === beer.id}
+											<Check class="w-3.5 h-3.5 text-green-600" />
+											<span class="text-green-600">Copied!</span>
+										{:else}
+											<Files class="w-3.5 h-3.5" />
+											<span>Feedback URL</span>
+										{/if}
+									</button>
+								{/if}
+								<form
+									method="POST"
+									action="?/deleteBeer"
+									use:enhance={() => {
+										if (!confirm(`Delete "${beer.name}"? This will also delete all votes and feedback for this beer.`)) {
+											return () => {};
+										}
+										return async ({ update }) => {
+											await update();
+										};
+									}}
 								>
-									{#if copiedFeedbackId === beer.id}
-										<Check class="w-3 h-3 text-green-600" />
-										<span class="text-green-600">Copied</span>
-									{:else}
-										<Files class="w-3 h-3" />
-										<span>Copy</span>
-									{/if}
-								</button>
+									<input type="hidden" name="beerId" value={beer.id} />
+									<button type="submit" class="flex items-center gap-1 px-2 py-1 rounded text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">
+										<Trash2 class="w-3.5 h-3.5" />
+										<span>Delete</span>
+									</button>
+								</form>
 							</div>
-						{/if}
-					</li>
+						</div>
+					</div>
 				{/each}
-			</ul>
+			</div>
 		{/if}
 	</div>
 
