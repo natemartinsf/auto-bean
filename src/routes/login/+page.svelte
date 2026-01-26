@@ -31,9 +31,14 @@
 	<title>Login - People's Choice Beer Voting</title>
 </svelte:head>
 
-<div class="min-h-screen flex items-center justify-center p-4">
+<div class="min-h-screen flex items-start justify-center px-4 pt-[20vh]">
 	<div class="w-full max-w-sm">
-		<h1 class="heading text-center mb-6">Admin Login</h1>
+		<div class="text-center mb-8">
+			<div class="text-4xl mb-3">🍺</div>
+			<h1 class="text-2xl font-bold text-brown-900">People's Choice</h1>
+			<h1 class="text-2xl font-bold text-brown-900 mb-2">Beer Voting</h1>
+			<p class="text-sm text-brown-500">Admin Login</p>
+		</div>
 
 		<form class="card space-y-4" onsubmit={handleSubmit}>
 			<div>
