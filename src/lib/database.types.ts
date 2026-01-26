@@ -207,6 +207,27 @@ export type Database = {
           },
         ]
       }
+      short_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       voters: {
         Row: {
           created_at: string | null
