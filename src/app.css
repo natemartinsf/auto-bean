@@ -155,6 +155,9 @@ html {
   background: #ffffff;
   box-shadow: inset 0 1px 2px rgba(61, 45, 34, 0.04), 0 0 0 3px rgba(245, 158, 11, 0.15);
 }
+.input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: inherit;
+}
 
 /* Form label */
 .label {
