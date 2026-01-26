@@ -242,7 +242,7 @@ src/
   - Cannot remove self (prevents lockout)
   - Note: Event-specific access managed in Task 3.2
 
-#### Task 2.4: Auth Callback & Password Setup - Added, Not Started
+#### Task 2.4: Auth Callback & Password Setup ✅
 - **What**: Create `/auth/callback` route to handle email invitation and password reset flows
 - **Priority**: Non-blocking — existing admin account works for testing. Complete before production use with multiple admins.
 - **Acceptance criteria**:
@@ -414,7 +414,7 @@ src/
   - Add logo to QR code center (qr-code-styling supports this)
   - Different card layouts
 
-#### Task 7.3: Remove CLI Script
+#### Task 7.3: Remove CLI Script ✅
 - **What**: Delete `scripts/generate-voter-qrcodes.js`, update docs
 - **Acceptance criteria**:
   - Script removed

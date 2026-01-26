@@ -137,25 +137,9 @@ const { data: voter } = await supabase
   .single()
 ```
 
-### QR Code Generator Script
+### QR Code Generation
 
-See `generate-voter-qrcodes.js` - a standalone Node.js script that:
-
-**Usage:**
-```bash
-npm install qrcode uuid
-node generate-voter-qrcodes.js 100 https://beervote.vercel.app {event_id}
-```
-
-**Output:**
-- `./qrcodes/voter-cards.html` - Printable sheet (12 cards per page, fits letter size)
-- `./qrcodes/voter-urls.csv` - Reference list of all URLs
-- `./qrcodes/individual/*.png` - Individual QR code images
-
-**Card Layout:**
-- 3 columns × 4 rows per page
-- Includes club branding, card number, and scan instructions
-- Dashed borders for easy cutting
+QR codes are generated from the admin UI. Admin selects an event, enters a count, and downloads a printable HTML sheet (12 cards per page, 3x4 grid with dashed borders).
 
 ## Brewer Feedback Feature
 
