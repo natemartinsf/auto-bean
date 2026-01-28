@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import type { Admin, AccessRequest } from '$lib/types';
+import type { Admin, AccessRequest, Organization } from '$lib/types';
 
 export const load: PageServerLoad = async ({ parent, locals }) => {
 	const parentData = await parent();
@@ -9,15 +9,19 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
 		throw redirect(303, '/admin');
 	}
 
-	const [adminsResult, requestsResult] = await Promise.all([
+	const [adminsResult, requestsResult, orgsResult] = await Promise.all([
 		locals.supabase
 			.from('admins')
-			.select('*')
+			.select('*, organizations(name)')
 			.order('created_at', { ascending: true }),
 		locals.supabase
 			.from('access_requests')
 			.select('*')
-			.order('created_at', { ascending: false })
+			.order('created_at', { ascending: false }),
+		locals.supabase
+			.from('organizations')
+			.select('*')
+			.order('name', { ascending: true })
 	]);
 
 	if (adminsResult.error) {
@@ -26,10 +30,20 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
 	if (requestsResult.error) {
 		console.error('Error fetching access requests:', requestsResult.error);
 	}
+	if (orgsResult.error) {
+		console.error('Error fetching organizations:', orgsResult.error);
+	}
+
+	// Attach org name to each admin for display
+	const admins = (adminsResult.data ?? []).map((a) => ({
+		...a,
+		organization_name: (a.organizations as unknown as { name: string })?.name ?? ''
+	}));
 
 	return {
-		admins: (adminsResult.data ?? []) as Admin[],
-		accessRequests: (requestsResult.data ?? []) as AccessRequest[]
+		admins: admins as (Admin & { organization_name: string })[],
+		accessRequests: (requestsResult.data ?? []) as AccessRequest[],
+		organizations: (orgsResult.data ?? []) as Organization[]
 	};
 };
 
@@ -53,9 +67,14 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString().trim().toLowerCase();
+		const organizationId = formData.get('organizationId')?.toString();
 
 		if (!email) {
 			return fail(400, { error: 'Email is required' });
+		}
+
+		if (!organizationId) {
+			return fail(400, { error: 'Organization is required' });
 		}
 
 		// Check if already an admin
@@ -101,7 +120,7 @@ export const actions: Actions = {
 		// Create admin record (use authenticated client - RLS allows admins to insert)
 		const { error: insertError } = await locals.supabase
 			.from('admins')
-			.insert({ user_id: userId, email });
+			.insert({ user_id: userId, email, organization_id: organizationId });
 
 		if (insertError) {
 			console.error('Error creating admin:', insertError);
@@ -212,5 +231,43 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	createOrg: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { error: 'Not authorized' });
+		}
+
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin?.is_super) {
+			return fail(403, { error: 'Not authorized' });
+		}
+
+		const formData = await request.formData();
+		const name = formData.get('orgName')?.toString().trim();
+
+		if (!name) {
+			return fail(400, { orgError: 'Organization name is required' });
+		}
+
+		const { error } = await locals.supabase
+			.from('organizations')
+			.insert({ name });
+
+		if (error) {
+			console.error('Error creating organization:', error);
+			if (error.code === '23505') {
+				return fail(400, { orgError: 'An organization with that name already exists' });
+			}
+			return fail(500, { orgError: 'Failed to create organization' });
+		}
+
+		return { orgCreated: true };
 	}
 };

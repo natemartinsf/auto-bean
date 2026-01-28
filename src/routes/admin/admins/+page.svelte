@@ -4,8 +4,11 @@
 	let { data, form } = $props();
 
 	let email = $state('');
+	let selectedOrgId = $state('');
 	let isSubmitting = $state(false);
 	let showResolved = $state(false);
+	let orgName = $state('');
+	let isCreatingOrg = $state(false);
 
 	const pendingRequests = $derived(
 		data.accessRequests.filter((r) => r.status === 'pending')
@@ -38,22 +41,31 @@
 					isSubmitting = false;
 					if (form?.success) {
 						email = '';
+						selectedOrgId = '';
 					}
 				};
 			}}
-			class="flex gap-3"
+			class="space-y-3"
 		>
-			<input
-				type="email"
-				name="email"
-				bind:value={email}
-				placeholder="user@example.com"
-				required
-				class="input flex-1"
-			/>
-			<button type="submit" disabled={isSubmitting} class="btn-primary whitespace-nowrap">
-				{isSubmitting ? 'Adding...' : 'Add Admin'}
-			</button>
+			<div class="flex gap-3">
+				<input
+					type="email"
+					name="email"
+					bind:value={email}
+					placeholder="user@example.com"
+					required
+					class="input flex-1"
+				/>
+				<select name="organizationId" bind:value={selectedOrgId} required class="input">
+					<option value="">Select org...</option>
+					{#each data.organizations as org}
+						<option value={org.id}>{org.name}</option>
+					{/each}
+				</select>
+				<button type="submit" disabled={isSubmitting} class="btn-primary whitespace-nowrap">
+					{isSubmitting ? 'Adding...' : 'Add Admin'}
+				</button>
+			</div>
 		</form>
 		{#if form?.error}
 			<p class="text-red-600 text-sm mt-2">{form.error}</p>
@@ -79,8 +91,11 @@
 					<li class="py-3 flex items-center justify-between">
 						<div>
 							<span class="text-brown-900">{admin.email}</span>
+							{#if admin.organization_name}
+								<span class="text-xs text-brown-500 ml-2">{admin.organization_name}</span>
+							{/if}
 							{#if isSelf}
-								<span class="text-xs text-muted ml-2">(you)</span>
+								<span class="text-xs text-muted ml-1">(you)</span>
 							{/if}
 						</div>
 						{#if !isSelf}
@@ -105,6 +120,58 @@
 					</li>
 				{/each}
 			</ul>
+		{/if}
+	</div>
+
+	<!-- Organizations -->
+	<div class="card">
+		<h2 class="text-lg font-semibold text-brown-900 mb-4">Organizations</h2>
+
+		{#if data.organizations.length === 0}
+			<p class="text-muted">No organizations yet.</p>
+		{:else}
+			<ul class="divide-y divide-brown-100 mb-4">
+				{#each data.organizations as org}
+					{@const adminCount = data.admins.filter(a => a.organization_id === org.id).length}
+					<li class="py-3 flex items-center justify-between">
+						<span class="text-brown-900">{org.name}</span>
+						<span class="text-sm text-muted">{adminCount} admin{adminCount === 1 ? '' : 's'}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
+		<form
+			method="POST"
+			action="?/createOrg"
+			use:enhance={() => {
+				isCreatingOrg = true;
+				return async ({ update }) => {
+					await update();
+					isCreatingOrg = false;
+					if (form?.orgCreated) {
+						orgName = '';
+					}
+				};
+			}}
+			class="flex gap-3"
+		>
+			<input
+				type="text"
+				name="orgName"
+				bind:value={orgName}
+				placeholder="Organization name"
+				required
+				class="input flex-1"
+			/>
+			<button type="submit" disabled={isCreatingOrg} class="btn-primary whitespace-nowrap">
+				{isCreatingOrg ? 'Creating...' : 'Create Org'}
+			</button>
+		</form>
+		{#if form?.orgError}
+			<p class="text-red-600 text-sm mt-2">{form.orgError}</p>
+		{:else if form?.orgCreated}
+			<p class="text-green-600 text-sm mt-2">Organization created.</p>
 		{/if}
 	</div>
 
