@@ -9,11 +9,18 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
 		throw redirect(303, '/admin');
 	}
 
+	// Belt-and-suspenders: RLS also enforces org scoping, but filter app-side too
+	const adminsQuery = locals.supabase
+		.from('admins')
+		.select('*, organizations(name)')
+		.order('created_at', { ascending: true });
+
+	if (!parentData.isSuper) {
+		adminsQuery.eq('organization_id', parentData.admin.organization_id);
+	}
+
 	const [adminsResult, requestsResult, orgsResult] = await Promise.all([
-		locals.supabase
-			.from('admins')
-			.select('*, organizations(name)')
-			.order('created_at', { ascending: true }),
+		adminsQuery,
 		locals.supabase
 			.from('access_requests')
 			.select('*')
