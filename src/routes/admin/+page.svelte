@@ -7,6 +7,8 @@
 	let date = $state('');
 	let maxPoints = $state('5');
 	let isSubmitting = $state(false);
+
+	const isSuper = $derived(data.isSuper);
 </script>
 
 <svelte:head>
@@ -98,7 +100,25 @@
 
 	<!-- Event List -->
 	<div>
-		<h2 class="text-lg font-semibold text-brown-900 mb-4">Your Events</h2>
+		{#if isSuper}
+			<div class="flex gap-2 mb-4">
+				<a
+					href="/admin"
+					class="px-4 py-2 rounded-lg text-sm font-medium no-underline transition-colors {!data.viewAll ? 'bg-brown-800 text-white' : 'bg-brown-100 text-brown-700 hover:bg-brown-200'}"
+				>
+					Your Org
+				</a>
+				<a
+					href="/admin?view=all"
+					class="px-4 py-2 rounded-lg text-sm font-medium no-underline transition-colors {data.viewAll ? 'bg-brown-800 text-white' : 'bg-brown-100 text-brown-700 hover:bg-brown-200'}"
+				>
+					All Events
+				</a>
+			</div>
+		{/if}
+		<h2 class="text-lg font-semibold text-brown-900 mb-4">
+			{data.viewAll ? 'All Events' : 'Your Events'}
+		</h2>
 		{#if data.error}
 			<p class="text-red-600">Failed to load events: {data.error}</p>
 		{:else if data.events.length === 0}
@@ -114,6 +134,9 @@
 								{event.name}
 							</h3>
 							<div class="text-sm text-muted mt-1 space-x-3">
+								{#if data.viewAll && data.orgNameMap[event.organization_id]}
+									<span class="text-brown-600">{data.orgNameMap[event.organization_id]}</span>
+								{/if}
 								{#if event.date}
 									<span>{new Date(event.date).toLocaleDateString()}</span>
 								{/if}
