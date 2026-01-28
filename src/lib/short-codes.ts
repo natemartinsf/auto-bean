@@ -6,8 +6,9 @@ export type ShortCodeType = 'event' | 'voter' | 'manage' | 'brewer';
 const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const CODE_LENGTH = 8;
 
-/** Generate an 8-char lowercase alphanumeric short code */
-export function generateShortCode(): string {
+const MAX_RETRIES = 5;
+
+function randomCode(): string {
 	const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
 	let result = '';
 	for (let i = 0; i < CODE_LENGTH; i++) {
@@ -16,14 +17,12 @@ export function generateShortCode(): string {
 	return result;
 }
 
-const MAX_RETRIES = 5;
-
-/** Generate a short code guaranteed unique in the database. Retries on collision. */
-export async function generateUniqueShortCode(
+/** Generate an 8-char short code guaranteed unique in the database. Retries on collision. */
+export async function generateShortCode(
 	supabase: SupabaseClient<Database>
 ): Promise<string> {
 	for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-		const code = generateShortCode();
+		const code = randomCode();
 		const { data, error } = await supabase
 			.from('short_codes')
 			.select('code')

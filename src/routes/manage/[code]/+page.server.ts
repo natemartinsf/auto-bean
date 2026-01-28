@@ -1,7 +1,7 @@
 import { fail, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import type { Event, Beer } from '$lib/types';
-import { resolveShortCode, generateUniqueShortCode } from '$lib/short-codes';
+import { resolveShortCode, generateShortCode } from '$lib/short-codes';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const eventId = await resolveShortCode(locals.supabase, params.code, 'manage');
@@ -73,7 +73,7 @@ export const actions: Actions = {
 		}
 
 		// Create brewer short code for the new beer
-		const brewerCode = await generateUniqueShortCode(locals.supabase);
+		const brewerCode = await generateShortCode(locals.supabase);
 		const { error: codeError } = await locals.supabase.from('short_codes').insert({
 			code: brewerCode,
 			target_type: 'brewer',

@@ -211,11 +211,14 @@
 
 		try {
 			// Generate voter UUIDs and short codes
-			const voters = Array.from({ length: qrCount }, (_, i) => ({
-				uuid: crypto.randomUUID(),
-				code: generateShortCode(),
-				number: i + 1
-			}));
+			const voters = [];
+			for (let i = 0; i < qrCount; i++) {
+				voters.push({
+					uuid: crypto.randomUUID(),
+					code: await generateShortCode(data.supabase),
+					number: i + 1
+				});
+			}
 
 			// Batch-insert short codes into the database
 			const shortCodeRows = voters.map((v) => ({

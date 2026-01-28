@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import type { Event } from '$lib/types';
-import { generateUniqueShortCode } from '$lib/short-codes';
+import { generateShortCode } from '$lib/short-codes';
 
 export const load: PageServerLoad = async ({ parent, locals }) => {
 	const parentData = await parent();
@@ -116,8 +116,8 @@ export const actions: Actions = {
 		}
 
 		// Generate short codes for the event (event + manage types)
-		const eventCode = await generateUniqueShortCode(locals.supabase);
-		const manageCode = await generateUniqueShortCode(locals.supabase);
+		const eventCode = await generateShortCode(locals.supabase);
+		const manageCode = await generateShortCode(locals.supabase);
 		const { error: codeError } = await locals.supabase
 			.from('short_codes')
 			.insert([
