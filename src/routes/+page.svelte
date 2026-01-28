@@ -56,7 +56,7 @@
 				Digital voting for homebrew competition people's choice awards.
 			</p>
 			<p class="mx-auto mb-10 max-w-md text-brown-500">
-				No app downloads. No paper ballots. Just scan, vote, and celebrate.
+				No app downloads. No paper ballots. No beans in bags. Just scan, vote, and celebrate.
 			</p>
 
 			<button onclick={scrollToForm} class="btn-primary px-8 py-4 text-lg shadow-lg">
@@ -237,6 +237,7 @@
 						}}
 						class="space-y-4"
 					>
+						<input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" />
 						<div>
 							<label class="label" for="name">Your name</label>
 							<input
@@ -271,7 +272,7 @@
 								name="club_name"
 								type="text"
 								required
-								placeholder="Bay Area Homebrewers Guild"
+								placeholder="Bay Area Mashers"
 								bind:value={clubName}
 							/>
 						</div>
@@ -308,7 +309,7 @@
 				style="background: linear-gradient(90deg, transparent, var(--color-brown-200), transparent)"
 			></div>
 			<p class="text-sm text-brown-400">
-				Made with &#127866; in San Francisco
+				Made with &#127866; in Alameda
 				<span class="mx-1.5 text-brown-300">&middot;</span>
 				<a
 					href="https://ko-fi.com/natemartinsf"
@@ -319,7 +320,7 @@
 					Buy me a beer
 				</a>
 			</p>
-			<p class="mt-2 text-xs text-brown-300">&copy; 2025 PintPoll</p>
+			<p class="mt-2 text-xs text-brown-300">&copy; 2026 PintPoll</p>
 		</div>
 	</footer>
 </div>

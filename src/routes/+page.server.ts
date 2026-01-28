@@ -9,25 +9,26 @@ export const actions: Actions = {
 		const club_name = formData.get('club_name')?.toString().trim();
 		const message = formData.get('message')?.toString().trim() || null;
 
-		if (!name || !email || !club_name) {
-			return fail(400, {
-				error: 'Name, email, and club name are required.',
-				name,
-				email,
-				club_name,
-				message
-			});
+		// Honeypot — bots fill hidden fields, humans don't
+		const website = formData.get('website')?.toString();
+		if (website) {
+			return { success: true };
 		}
 
-		// Basic email format check
+		if (!name || !email || !club_name) {
+			return fail(400, { error: 'Name, email, and club name are required.' });
+		}
+
+		if (name.length > 200 || email.length > 320 || club_name.length > 200) {
+			return fail(400, { error: 'One or more fields exceed the maximum length.' });
+		}
+
+		if (message && message.length > 2000) {
+			return fail(400, { error: 'Message must be under 2000 characters.' });
+		}
+
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			return fail(400, {
-				error: 'Please enter a valid email address.',
-				name,
-				email,
-				club_name,
-				message
-			});
+			return fail(400, { error: 'Please enter a valid email address.' });
 		}
 
 		const { error } = await locals.supabase.from('access_requests').insert({
@@ -39,13 +40,7 @@ export const actions: Actions = {
 
 		if (error) {
 			console.error('Failed to insert access request:', error);
-			return fail(500, {
-				error: 'Something went wrong. Please try again.',
-				name,
-				email,
-				club_name,
-				message
-			});
+			return fail(500, { error: 'Something went wrong. Please try again.' });
 		}
 
 		return { success: true };
