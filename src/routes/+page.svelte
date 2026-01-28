@@ -1,156 +1,325 @@
 <script lang="ts">
-	import PointPicker from '$lib/components/PointPicker.svelte';
+	import { enhance } from '$app/forms';
 
-	const maxPoints = 10;
-	let beer1Points = $state(3);
-	let beer2Points = $state(1);
-	let beer3Points = $state(0);
+	let { form } = $props();
 
-	const remaining = $derived(maxPoints - beer1Points - beer2Points - beer3Points);
+	let isSubmitting = $state(false);
+	let name = $state('');
+	let email = $state('');
+	let clubName = $state('');
+	let message = $state('');
+
+	function scrollToForm() {
+		document.getElementById('request-access')?.scrollIntoView({ behavior: 'smooth' });
+	}
 </script>
 
-<!-- Design Preview - Remove this file's contents after approval -->
-<div class="min-h-screen p-6 max-w-2xl mx-auto">
-	<h1 class="heading mb-2">People's Choice Beer Voting</h1>
-	<p class="text-muted mb-8">Design preview - craft brewery aesthetic</p>
+<svelte:head>
+	<title>PintPoll - Digital Voting for Homebrew Competitions</title>
+	<meta
+		name="description"
+		content="Run people's choice awards at your homebrew competition with QR-based digital voting. No app downloads, no paper ballots."
+	/>
+</svelte:head>
 
-	<!-- Color Palette -->
-	<section class="mb-8">
-		<h2 class="subheading mb-4">Color Palette</h2>
-		<div class="space-y-3">
-			<div>
-				<p class="text-sm text-brown-600 mb-1">Amber (Primary)</p>
-				<div class="flex gap-1">
-					<div class="w-12 h-12 rounded bg-amber-100"></div>
-					<div class="w-12 h-12 rounded bg-amber-300"></div>
-					<div class="w-12 h-12 rounded bg-amber-500"></div>
-					<div class="w-12 h-12 rounded bg-amber-600"></div>
-					<div class="w-12 h-12 rounded bg-amber-800"></div>
-				</div>
-			</div>
-			<div>
-				<p class="text-sm text-brown-600 mb-1">Brown (Secondary)</p>
-				<div class="flex gap-1">
-					<div class="w-12 h-12 rounded bg-brown-100"></div>
-					<div class="w-12 h-12 rounded bg-brown-300"></div>
-					<div class="w-12 h-12 rounded bg-brown-500"></div>
-					<div class="w-12 h-12 rounded bg-brown-700"></div>
-					<div class="w-12 h-12 rounded bg-brown-900"></div>
-				</div>
-			</div>
-			<div>
-				<p class="text-sm text-brown-600 mb-1">Copper (Accent)</p>
-				<div class="flex gap-1">
-					<div class="w-12 h-12 rounded bg-copper-400"></div>
-					<div class="w-12 h-12 rounded bg-copper-500"></div>
-					<div class="w-12 h-12 rounded bg-copper-600"></div>
-				</div>
-			</div>
-		</div>
-	</section>
+<div class="min-h-screen">
+	<!-- Hero -->
+	<section class="relative overflow-hidden px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+		<!-- Decorative grain overlay -->
+		<div
+			class="pointer-events-none absolute inset-0 opacity-[0.03]"
+			style="background-image: url('data:image/svg+xml,{encodeURIComponent(`<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>`)}')"
+		></div>
 
-	<!-- Buttons -->
-	<section class="mb-8">
-		<h2 class="subheading mb-4">Buttons</h2>
-		<div class="flex flex-wrap gap-3">
-			<button class="btn-primary">Primary</button>
-			<button class="btn-secondary">Secondary</button>
-			<button class="btn-ghost">Ghost</button>
-			<button class="btn-primary" disabled>Disabled</button>
-		</div>
-	</section>
+		<!-- Decorative hop/wheat circles -->
+		<div
+			class="absolute -top-20 -right-20 h-64 w-64 rounded-full opacity-[0.07]"
+			style="background: radial-gradient(circle, var(--color-amber-400) 0%, transparent 70%)"
+		></div>
+		<div
+			class="absolute -bottom-32 -left-16 h-80 w-80 rounded-full opacity-[0.05]"
+			style="background: radial-gradient(circle, var(--color-copper-500) 0%, transparent 70%)"
+		></div>
 
-	<!-- Cards -->
-	<section class="mb-8">
-		<h2 class="subheading mb-4">Cards</h2>
-		<div class="space-y-3">
-			<div class="card">
-				<h3 class="font-semibold text-brown-800">Hop Monster IPA</h3>
-				<p class="text-sm text-brown-500">Brewed by Sarah M. • West Coast IPA</p>
-			</div>
-			<div class="card-interactive">
-				<h3 class="font-semibold text-brown-800">Oatmeal Stout</h3>
-				<p class="text-sm text-brown-500">Brewed by Mike T. • Stout</p>
-				<p class="text-xs text-copper-600 mt-2">Tap to vote →</p>
-			</div>
-		</div>
-	</section>
-
-	<!-- Form Elements -->
-	<section class="mb-8">
-		<h2 class="subheading mb-4">Form Elements</h2>
-		<div class="card space-y-4">
-			<div>
-				<label class="label" for="beer-name">Beer Name</label>
-				<input class="input" id="beer-name" type="text" placeholder="Enter beer name..." />
-			</div>
-			<div>
-				<label class="label" for="notes">Tasting Notes</label>
-				<textarea class="input" id="notes" rows="3" placeholder="What did you think?"></textarea>
-			</div>
-			<button class="btn-primary w-full">Submit</button>
-		</div>
-	</section>
-
-	<!-- Typography -->
-	<section class="mb-8">
-		<h2 class="subheading mb-4">Typography</h2>
-		<div class="space-y-2">
-			<p class="text-4xl font-bold text-brown-900">Heading 4XL</p>
-			<p class="heading">Heading (2XL bold)</p>
-			<p class="subheading">Subheading (LG semibold)</p>
-			<p>Body text - this is what most content looks like.</p>
-			<p class="text-muted">Muted text for secondary information</p>
-			<p class="text-sm">Small text (14px)</p>
-			<a href="/example">This is a link</a>
-		</div>
-	</section>
-
-	<!-- Example: Point Allocation with PointPicker Component -->
-	<section class="mb-8">
-		<h2 class="subheading mb-4">Point Allocation (Interactive)</h2>
-		<p class="text-sm text-brown-500 mb-3">{maxPoints} max points, {maxPoints - remaining} used, {remaining} remaining</p>
-
-		<!-- Beer 1 -->
-		<div class="card mb-3">
-			<div class="flex justify-between items-center mb-3">
-				<div>
-					<h3 class="font-semibold text-brown-800">Belgian Tripel</h3>
-					<p class="text-sm text-brown-500">Brewed by Dan K.</p>
-				</div>
-				<span class={beer1Points > 0 ? 'text-amber-600 font-bold text-xl' : 'text-brown-400 font-bold text-xl'}>
-					{beer1Points} {beer1Points === 1 ? 'pt' : 'pts'}
+		<div class="relative mx-auto max-w-2xl text-center">
+			<!-- Wordmark -->
+			<div class="mb-6 inline-block">
+				<span
+					class="text-5xl font-black tracking-tight text-brown-900 md:text-7xl"
+					style="letter-spacing: -0.03em"
+				>
+					Pint<span class="text-amber-600">Poll</span>
 				</span>
 			</div>
-			<PointPicker max={maxPoints} bind:value={beer1Points} maxSelectable={beer1Points + remaining} />
-		</div>
 
-		<!-- Beer 2 -->
-		<div class="card mb-3">
-			<div class="flex justify-between items-center mb-3">
-				<div>
-					<h3 class="font-semibold text-brown-800">Oatmeal Stout</h3>
-					<p class="text-sm text-brown-500">Brewed by Mike T.</p>
-				</div>
-				<span class={beer2Points > 0 ? 'text-amber-600 font-bold text-xl' : 'text-brown-400 font-bold text-xl'}>
-					{beer2Points} {beer2Points === 1 ? 'pt' : 'pts'}
-				</span>
-			</div>
-			<PointPicker max={maxPoints} bind:value={beer2Points} maxSelectable={beer2Points + remaining} />
-		</div>
+			<p class="mx-auto mb-3 max-w-lg text-lg text-brown-700 md:text-xl">
+				Digital voting for homebrew competition people's choice awards.
+			</p>
+			<p class="mx-auto mb-10 max-w-md text-brown-500">
+				No app downloads. No paper ballots. Just scan, vote, and celebrate.
+			</p>
 
-		<!-- Beer 3 -->
-		<div class="card">
-			<div class="flex justify-between items-center mb-3">
-				<div>
-					<h3 class="font-semibold text-brown-800">Hop Monster IPA</h3>
-					<p class="text-sm text-brown-500">Brewed by Sarah M.</p>
-				</div>
-				<span class={beer3Points > 0 ? 'text-amber-600 font-bold text-xl' : 'text-brown-400 font-bold text-xl'}>
-					{beer3Points} {beer3Points === 1 ? 'pt' : 'pts'}
-				</span>
-			</div>
-			<PointPicker max={maxPoints} bind:value={beer3Points} maxSelectable={beer3Points + remaining} />
+			<button onclick={scrollToForm} class="btn-primary px-8 py-4 text-lg shadow-lg">
+				Request Access
+			</button>
 		</div>
 	</section>
+
+	<!-- Divider -->
+	<div class="mx-auto max-w-xs">
+		<div
+			class="h-px"
+			style="background: linear-gradient(90deg, transparent, var(--color-brown-300), transparent)"
+		></div>
+	</div>
+
+	<!-- How It Works -->
+	<section class="px-6 py-16 md:py-20">
+		<div class="mx-auto max-w-3xl">
+			<h2 class="heading mb-12 text-center">How It Works</h2>
+
+			<div class="grid gap-8 md:grid-cols-2 md:gap-10">
+				<!-- Voter Flow -->
+				<div class="card p-6">
+					<div class="mb-4 flex items-center gap-3">
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl"
+							style="background: linear-gradient(135deg, var(--color-amber-100), var(--color-amber-200))"
+						>
+							&#127866;
+						</div>
+						<h3 class="text-lg font-bold text-brown-900">For Voters</h3>
+					</div>
+
+					<ol class="space-y-4">
+						<li class="flex gap-3">
+							<span
+								class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white"
+								>1</span
+							>
+							<div>
+								<p class="font-medium text-brown-800">Scan your QR card</p>
+								<p class="text-sm text-brown-500">
+									Each voter gets a unique card. One scan opens your ballot.
+								</p>
+							</div>
+						</li>
+						<li class="flex gap-3">
+							<span
+								class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white"
+								>2</span
+							>
+							<div>
+								<p class="font-medium text-brown-800">Allocate your points</p>
+								<p class="text-sm text-brown-500">
+									Spread points across your favorites. Give more to the ones you love.
+								</p>
+							</div>
+						</li>
+						<li class="flex gap-3">
+							<span
+								class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white"
+								>3</span
+							>
+							<div>
+								<p class="font-medium text-brown-800">Change anytime</p>
+								<p class="text-sm text-brown-500">
+									Update your votes until results are revealed. No pressure.
+								</p>
+							</div>
+						</li>
+					</ol>
+				</div>
+
+				<!-- Organizer Flow -->
+				<div class="card p-6">
+					<div class="mb-4 flex items-center gap-3">
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl"
+							style="background: linear-gradient(135deg, var(--color-brown-100), var(--color-brown-200))"
+						>
+							&#127942;
+						</div>
+						<h3 class="text-lg font-bold text-brown-900">For Organizers</h3>
+					</div>
+
+					<ol class="space-y-4">
+						<li class="flex gap-3">
+							<span
+								class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brown-600 text-xs font-bold text-white"
+								>1</span
+							>
+							<div>
+								<p class="font-medium text-brown-800">Create your event</p>
+								<p class="text-sm text-brown-500">
+									Set up beers, brewers, and configure point limits.
+								</p>
+							</div>
+						</li>
+						<li class="flex gap-3">
+							<span
+								class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brown-600 text-xs font-bold text-white"
+								>2</span
+							>
+							<div>
+								<p class="font-medium text-brown-800">Print QR cards</p>
+								<p class="text-sm text-brown-500">
+									Generate and print voter cards. Hand them out at the door.
+								</p>
+							</div>
+						</li>
+						<li class="flex gap-3">
+							<span
+								class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brown-600 text-xs font-bold text-white"
+								>3</span
+							>
+							<div>
+								<p class="font-medium text-brown-800">Reveal results live</p>
+								<p class="text-sm text-brown-500">
+									Flip the switch and watch the leaderboard unveil on the big screen.
+								</p>
+							</div>
+						</li>
+					</ol>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Divider -->
+	<div class="mx-auto max-w-xs">
+		<div
+			class="h-px"
+			style="background: linear-gradient(90deg, transparent, var(--color-brown-300), transparent)"
+		></div>
+	</div>
+
+	<!-- Request Access -->
+	<section id="request-access" class="scroll-mt-8 px-6 py-16 md:py-20">
+		<div class="mx-auto max-w-lg">
+			<h2 class="heading mb-3 text-center">Get Started</h2>
+			<p class="mb-8 text-center text-brown-500">
+				PintPoll is currently invite-only. Tell us about your club and we'll get you set up.
+			</p>
+
+			{#if form?.success}
+				<div class="card border-success/30 p-8 text-center">
+					<div class="mb-3 text-4xl">&#127881;</div>
+					<h3 class="mb-2 text-lg font-bold text-brown-900">Request received!</h3>
+					<p class="text-brown-600">
+						We'll review your request and reach out soon. In the meantime, start thinking about
+						which homebrew deserves the crown.
+					</p>
+				</div>
+			{:else}
+				<div class="card p-6">
+					{#if form?.error}
+						<div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-error">
+							{form.error}
+						</div>
+					{/if}
+
+					<form
+						method="POST"
+						action="?/requestAccess"
+						use:enhance={() => {
+							isSubmitting = true;
+							return async ({ update }) => {
+								await update();
+								isSubmitting = false;
+								if (form?.success) {
+									name = '';
+									email = '';
+									clubName = '';
+									message = '';
+								}
+							};
+						}}
+						class="space-y-4"
+					>
+						<div>
+							<label class="label" for="name">Your name</label>
+							<input
+								class="input"
+								id="name"
+								name="name"
+								type="text"
+								required
+								placeholder="Jane Brewmaster"
+								bind:value={name}
+							/>
+						</div>
+
+						<div>
+							<label class="label" for="email">Email</label>
+							<input
+								class="input"
+								id="email"
+								name="email"
+								type="email"
+								required
+								placeholder="jane@brewclub.org"
+								bind:value={email}
+							/>
+						</div>
+
+						<div>
+							<label class="label" for="club_name">Club or organization</label>
+							<input
+								class="input"
+								id="club_name"
+								name="club_name"
+								type="text"
+								required
+								placeholder="Bay Area Homebrewers Guild"
+								bind:value={clubName}
+							/>
+						</div>
+
+						<div>
+							<label class="label" for="message">
+								Anything else?
+								<span class="font-normal text-brown-400">(optional)</span>
+							</label>
+							<textarea
+								class="input"
+								id="message"
+								name="message"
+								rows="3"
+								placeholder="Tell us about your event, how many voters you expect, etc."
+								bind:value={message}
+							></textarea>
+						</div>
+
+						<button type="submit" class="btn-primary w-full" disabled={isSubmitting}>
+							{isSubmitting ? 'Sending...' : 'Request Access'}
+						</button>
+					</form>
+				</div>
+			{/if}
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="px-6 pb-8 pt-12">
+		<div class="mx-auto max-w-lg text-center">
+			<div
+				class="mb-6 h-px"
+				style="background: linear-gradient(90deg, transparent, var(--color-brown-200), transparent)"
+			></div>
+			<p class="text-sm text-brown-400">
+				Made with &#127866; in San Francisco
+				<span class="mx-1.5 text-brown-300">&middot;</span>
+				<a
+					href="https://ko-fi.com/natemartinsf"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-brown-500 underline underline-offset-2 transition-colors hover:text-amber-600"
+				>
+					Buy me a beer
+				</a>
+			</p>
+			<p class="mt-2 text-xs text-brown-300">&copy; 2025 PintPoll</p>
+		</div>
+	</footer>
 </div>
