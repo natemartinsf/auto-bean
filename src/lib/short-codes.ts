@@ -16,18 +16,48 @@ export function generateShortCode(): string {
 	return result;
 }
 
-/** Resolve a short code to its target UUID. Returns null if not found. */
+const MAX_RETRIES = 5;
+
+/** Generate a short code guaranteed unique in the database. Retries on collision. */
+export async function generateUniqueShortCode(
+	supabase: SupabaseClient<Database>
+): Promise<string> {
+	for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+		const code = generateShortCode();
+		const { data, error } = await supabase
+			.from('short_codes')
+			.select('code')
+			.eq('code', code)
+			.maybeSingle();
+
+		if (error) {
+			throw new Error(`Failed to check short code uniqueness: ${error.message}`);
+		}
+
+		if (!data) {
+			return code;
+		}
+	}
+
+	throw new Error(`Failed to generate unique short code after ${MAX_RETRIES} attempts`);
+}
+
+/** Resolve a short code to its target UUID. Returns null if not found, throws on DB errors. */
 export async function resolveShortCode(
 	supabase: SupabaseClient<Database>,
 	code: string,
 	targetType: ShortCodeType
 ): Promise<string | null> {
-	const { data } = await supabase
+	const { data, error } = await supabase
 		.from('short_codes')
 		.select('target_id')
 		.eq('code', code.toLowerCase())
 		.eq('target_type', targetType)
-		.single();
+		.maybeSingle();
+
+	if (error) {
+		throw new Error(`Failed to resolve short code: ${error.message}`);
+	}
 
 	return data?.target_id ?? null;
 }

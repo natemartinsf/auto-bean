@@ -1,7 +1,7 @@
 import { fail, redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import type { Event, Beer, Admin } from '$lib/types';
-import { generateShortCode, resolveShortCode } from '$lib/short-codes';
+import { generateUniqueShortCode, resolveShortCode } from '$lib/short-codes';
 
 export const load: PageServerLoad = async ({ parent, locals, params }) => {
 	const parentData = await parent();
@@ -690,7 +690,7 @@ export const actions: Actions = {
 		}
 
 		const voterUuid = crypto.randomUUID();
-		const voterCode = generateShortCode();
+		const voterCode = await generateUniqueShortCode(locals.supabase);
 
 		const { error: codeError } = await locals.supabase
 			.from('short_codes')
