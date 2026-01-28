@@ -1,6 +1,6 @@
 import { fail, redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import type { Event, Beer, Admin } from '$lib/types';
+import type { Event, Beer } from '$lib/types';
 import { generateShortCode, resolveShortCode } from '$lib/short-codes';
 
 export const load: PageServerLoad = async ({ parent, locals, params }) => {
@@ -14,19 +14,6 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 	if (!eventId) {
 		throw error(404, 'Event not found');
 	}
-	const currentAdminId = parentData.admin.id;
-
-	// Verify admin is assigned to this event
-	const { data: assignment, error: assignmentError } = await locals.supabase
-		.from('event_admins')
-		.select('event_id')
-		.eq('event_id', eventId)
-		.eq('admin_id', currentAdminId)
-		.single();
-
-	if (assignmentError || !assignment) {
-		throw error(403, 'You are not assigned to this event');
-	}
 
 	// Get event details
 	const { data: event, error: eventError } = await locals.supabase
@@ -37,6 +24,11 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 
 	if (eventError || !event) {
 		throw error(404, 'Event not found');
+	}
+
+	// Verify admin's org matches the event's org (or is super admin)
+	if (event.organization_id !== parentData.admin.organization_id && !parentData.isSuper) {
+		throw error(403, 'You do not have access to this event');
 	}
 
 	// Get beers for this event with their brewer tokens
@@ -88,31 +80,6 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 		}
 	}
 
-	// Get admins assigned to this event (with their info)
-	const { data: eventAdmins, error: eventAdminsError } = await locals.supabase
-		.from('event_admins')
-		.select('admin_id, admins(id, email)')
-		.eq('event_id', eventId);
-
-	if (eventAdminsError) {
-		console.error('Error fetching event admins:', eventAdminsError);
-	}
-
-	// Get all admins (for the add admin dropdown)
-	const { data: allAdmins, error: allAdminsError } = await locals.supabase
-		.from('admins')
-		.select('id, email')
-		.order('email', { ascending: true });
-
-	if (allAdminsError) {
-		console.error('Error fetching all admins:', allAdminsError);
-	}
-
-	// Extract assigned admin info
-	const assignedAdmins = (eventAdmins || [])
-		.map((ea) => ea.admins as { id: string; email: string })
-		.filter(Boolean);
-
 	// Load short codes for URL display
 	const { data: manageCodeRow } = await locals.supabase
 		.from('short_codes')
@@ -139,9 +106,6 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 	return {
 		event: event as Event,
 		beers: (beers || []) as Beer[],
-		assignedAdmins,
-		allAdmins: (allAdmins || []) as Pick<Admin, 'id' | 'email'>[],
-		currentAdminId,
 		voteTotals,
 		eventCode: params.code,
 		manageCode: manageCodeRow?.code ?? null,
@@ -159,10 +123,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
-		// Verify user is admin and assigned to this event
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -170,15 +134,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'toggleBlindTasting', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'toggleBlindTasting', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'toggleBlindTasting', error: 'You do not have access to this event' });
 		}
 
 		const formData = await request.formData();
@@ -206,10 +169,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
-		// Verify user is admin and assigned to this event
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -217,15 +180,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'advanceStage', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'advanceStage', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'advanceStage', error: 'You do not have access to this event' });
 		}
 
 		// Get current stage
@@ -268,10 +230,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
-		// Verify user is admin and assigned to this event
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -279,15 +241,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'resetStage', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'resetStage', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'resetStage', error: 'You do not have access to this event' });
 		}
 
 		const { error } = await locals.supabase
@@ -312,10 +273,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
-		// Verify user is admin and assigned to this event
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -323,15 +284,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'deleteBeer', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'deleteBeer', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'deleteBeer', error: 'You do not have access to this event' });
 		}
 
 		const formData = await request.formData();
@@ -363,69 +323,6 @@ export const actions: Actions = {
 		return { beerDeleted: true };
 	},
 
-	addEventAdmin: async ({ request, locals, params }) => {
-		const { user } = await locals.safeGetSession();
-		if (!user) {
-			return fail(403, { action: 'addEventAdmin', error: 'Not authorized' });
-		}
-
-		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
-		if (!eventId) throw error(404, 'Event not found');
-
-		// Verify user is admin and assigned to this event
-		const { data: currentAdmin } = await locals.supabase
-			.from('admins')
-			.select('id')
-			.eq('user_id', user.id)
-			.single();
-
-		if (!currentAdmin) {
-			return fail(403, { action: 'addEventAdmin', error: 'Not authorized' });
-		}
-
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
-			.single();
-
-		if (!assignment) {
-			return fail(403, { action: 'addEventAdmin', error: 'You are not assigned to this event' });
-		}
-
-		const formData = await request.formData();
-		const adminId = formData.get('adminId')?.toString();
-
-		if (!adminId) {
-			return fail(400, { action: 'addEventAdmin', error: 'Admin ID is required' });
-		}
-
-		// Check if already assigned
-		const { data: existing } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', adminId)
-			.single();
-
-		if (existing) {
-			return fail(400, { action: 'addEventAdmin', error: 'Admin is already assigned to this event' });
-		}
-
-		const { error } = await locals.supabase.from('event_admins').insert({
-			event_id: eventId,
-			admin_id: adminId
-		});
-
-		if (error) {
-			console.error('Error adding event admin:', error);
-			return fail(500, { action: 'addEventAdmin', error: 'Failed to add admin to event' });
-		}
-
-		return { adminAdded: true };
-	},
-
 	uploadLogo: async ({ request, locals, params }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) {
@@ -435,10 +332,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
-		// Verify user is admin and assigned to this event
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -446,15 +343,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'uploadLogo', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'uploadLogo', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'uploadLogo', error: 'You do not have access to this event' });
 		}
 
 		const formData = await request.formData();
@@ -536,10 +432,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
-		// Verify user is admin and assigned to this event
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -547,15 +443,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'removeLogo', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'removeLogo', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'removeLogo', error: 'You do not have access to this event' });
 		}
 
 		// Get current logo URL
@@ -589,76 +484,6 @@ export const actions: Actions = {
 		return { logoRemoved: true };
 	},
 
-	removeEventAdmin: async ({ request, locals, params }) => {
-		const { user } = await locals.safeGetSession();
-		if (!user) {
-			return fail(403, { action: 'removeEventAdmin', error: 'Not authorized' });
-		}
-
-		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
-		if (!eventId) throw error(404, 'Event not found');
-
-		// Verify user is admin and assigned to this event
-		const { data: currentAdmin } = await locals.supabase
-			.from('admins')
-			.select('id')
-			.eq('user_id', user.id)
-			.single();
-
-		if (!currentAdmin) {
-			return fail(403, { action: 'removeEventAdmin', error: 'Not authorized' });
-		}
-
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
-			.single();
-
-		if (!assignment) {
-			return fail(403, { action: 'removeEventAdmin', error: 'You are not assigned to this event' });
-		}
-
-		const formData = await request.formData();
-		const adminId = formData.get('adminId')?.toString();
-
-		if (!adminId) {
-			return fail(400, { action: 'removeEventAdmin', error: 'Admin ID is required' });
-		}
-
-		// Check if trying to remove self
-		if (adminId === currentAdmin.id) {
-			// Count how many admins are assigned
-			const { count } = await locals.supabase
-				.from('event_admins')
-				.select('*', { count: 'exact', head: true })
-				.eq('event_id', eventId);
-
-			if (count === 1) {
-				return fail(400, { action: 'removeEventAdmin', error: 'Cannot remove yourself as the only admin' });
-			}
-		}
-
-		const { error } = await locals.supabase
-			.from('event_admins')
-			.delete()
-			.eq('event_id', eventId)
-			.eq('admin_id', adminId);
-
-		if (error) {
-			console.error('Error removing event admin:', error);
-			return fail(500, { action: 'removeEventAdmin', error: 'Failed to remove admin from event' });
-		}
-
-		// If admin removed themselves, redirect to admin home
-		if (adminId === currentAdmin.id) {
-			throw redirect(303, '/admin');
-		}
-
-		return { adminRemoved: true };
-	},
-
 	generateTestVoter: async ({ locals, params }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) {
@@ -668,9 +493,10 @@ export const actions: Actions = {
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
+		// Verify user is admin with org access to this event
 		const { data: currentAdmin } = await locals.supabase
 			.from('admins')
-			.select('id')
+			.select('id, is_super, organization_id')
 			.eq('user_id', user.id)
 			.single();
 
@@ -678,15 +504,14 @@ export const actions: Actions = {
 			return fail(403, { action: 'generateTestVoter', error: 'Not authorized' });
 		}
 
-		const { data: assignment } = await locals.supabase
-			.from('event_admins')
-			.select('event_id')
-			.eq('event_id', eventId)
-			.eq('admin_id', currentAdmin.id)
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
 			.single();
 
-		if (!assignment) {
-			return fail(403, { action: 'generateTestVoter', error: 'You are not assigned to this event' });
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'generateTestVoter', error: 'You do not have access to this event' });
 		}
 
 		const voterUuid = crypto.randomUUID();

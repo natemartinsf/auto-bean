@@ -11,7 +11,6 @@
 
 	let { data, form } = $props();
 
-	let selectedAdminId = $state('');
 	let copied = $state(false);
 	let copiedVoterLink = $state(false);
 	let copiedFeedbackId = $state<string | null>(null);
@@ -177,11 +176,6 @@
 			data.supabase.removeChannel(channel);
 		};
 	});
-
-	// Admins not yet assigned to this event
-	const availableAdmins = $derived(
-		data.allAdmins.filter((admin) => !data.assignedAdmins.some((a) => a.id === admin.id))
-	);
 
 	async function copyToClipboard(text: string) {
 		await navigator.clipboard.writeText(text);
@@ -855,68 +849,4 @@
 		{/if}
 	</div>
 
-	<!-- Event Admins -->
-	<div class="card">
-		<h2 class="text-lg font-semibold text-brown-900 mb-4">Event Admins</h2>
-		<p class="text-sm text-muted mb-4">Admins who can manage this event.</p>
-
-		<!-- Add Admin Form -->
-		{#if availableAdmins.length > 0}
-			<form method="POST" action="?/addEventAdmin" use:enhance class="flex gap-2 mb-4">
-				<select name="adminId" bind:value={selectedAdminId} required class="input flex-1">
-					<option value="">Select an admin...</option>
-					{#each availableAdmins as admin}
-						<option value={admin.id}>{admin.email}</option>
-					{/each}
-				</select>
-				<button type="submit" class="btn-primary whitespace-nowrap">Add</button>
-			</form>
-		{:else}
-			<p class="text-sm text-muted mb-4 italic">All admins are already assigned to this event.</p>
-		{/if}
-
-		{#if form?.error && (form?.action === 'addEventAdmin' || form?.action === 'removeEventAdmin')}
-			<p class="text-red-600 text-sm mb-3">{form.error}</p>
-		{/if}
-
-		<!-- Assigned Admins List -->
-		<ul class="divide-y divide-brown-100">
-			{#each data.assignedAdmins as admin}
-				{@const isSelf = admin.id === data.currentAdminId}
-				{@const isOnlyAdmin = data.assignedAdmins.length === 1}
-				<li class="py-3 flex items-center justify-between">
-					<div>
-						<span class="text-brown-900">{admin.email}</span>
-						{#if isSelf}
-							<span class="text-xs text-muted ml-2">(you)</span>
-						{/if}
-					</div>
-					{#if !isOnlyAdmin || !isSelf}
-						<form
-							method="POST"
-							action="?/removeEventAdmin"
-							use:enhance={() => {
-								const message = isSelf
-									? 'Remove yourself from this event? You will lose access.'
-									: `Remove ${admin.email} from this event?`;
-								if (!confirm(message)) {
-									return () => {};
-								}
-								return async ({ update }) => {
-									await update();
-								};
-							}}
-						>
-							<input type="hidden" name="adminId" value={admin.id} />
-							<button type="submit" class="btn-ghost text-red-600 hover:text-red-700 text-sm">
-								Remove
-							</button>
-						</form>
-					{:else}
-						<span class="text-xs text-muted">Only admin</span>
-					{/if}
-				</li>
-			{/each}
-		</ul>
-	</div>
 </div>
