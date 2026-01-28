@@ -23,8 +23,13 @@
 </svelte:head>
 
 <div class="min-h-screen">
+	<!-- Nav -->
+	<nav class="flex justify-end px-6 py-4">
+		<a href="/login" class="text-sm text-brown-500 hover:text-brown-700 transition-colors">Admin Login</a>
+	</nav>
+
 	<!-- Hero -->
-	<section class="relative overflow-hidden px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+	<section class="relative overflow-hidden px-6 pt-8 pb-20 md:pt-16 md:pb-28">
 		<!-- Decorative grain overlay -->
 		<div
 			class="pointer-events-none absolute inset-0 opacity-[0.03]"
