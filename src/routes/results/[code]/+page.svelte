@@ -312,6 +312,17 @@
 			{/if}
 		</main>
 	{/if}
+
+	<footer class="text-center py-6 mt-auto">
+		<a
+			href="https://ko-fi.com/natemartinsf"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="text-xs text-brown-400 hover:text-brown-600 transition-colors"
+		>
+			Find this useful? Buy a beer for the developer!
+		</a>
+	</footer>
 </div>
 
 <style>
