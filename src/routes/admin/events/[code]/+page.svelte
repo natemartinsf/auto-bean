@@ -4,8 +4,7 @@
 	import { onMount } from 'svelte';
 	import { Files, Check, RefreshCw, QrCode, Upload, Trash2 } from 'lucide-svelte';
 	import type { Beer } from '$lib/types';
-	import { generateShortCode } from '$lib/short-codes';
-	import QRCodeStyling from 'qr-code-styling';
+		import QRCodeStyling from 'qr-code-styling';
 
 	type BeerWithToken = Beer & { brewer_tokens: { id: string } | null };
 
@@ -204,37 +203,30 @@
 		isGeneratingQR = true;
 
 		try {
-			// Generate voter UUIDs and short codes
-			const voters = [];
-			for (let i = 0; i < qrCount; i++) {
-				voters.push({
-					uuid: crypto.randomUUID(),
-					code: await generateShortCode(data.supabase),
-					number: i + 1
-				});
-			}
+			// Call server action to generate and store short codes
+			const formData = new FormData();
+			formData.append('count', qrCount.toString());
 
-			// Batch-insert short codes into the database
-			const shortCodeRows = voters.map((v) => ({
-				code: v.code,
-				target_type: 'voter' as const,
-				target_id: v.uuid
-			}));
+			const response = await fetch('?/generateQRCodes', {
+				method: 'POST',
+				body: formData
+			});
 
-			const { error: insertError } = await data.supabase
-				.from('short_codes')
-				.insert(shortCodeRows);
+			const result = await response.json();
 
-			if (insertError) {
-				console.error('Error inserting voter short codes:', insertError);
-				alert('Failed to save voter codes. Please try again.');
+			// SvelteKit wraps the data in a specific format
+			if (result.type === 'failure' || !result.data?.voterCodes) {
+				console.error('Error generating QR codes:', result.data?.error || 'Unknown error');
+				alert(result.data?.error || 'Failed to generate voter codes. Please try again.');
 				return;
 			}
 
+			const voterCodes: string[] = result.data.voterCodes;
+
 			// Generate QR code data URLs
 			const qrDataUrls: string[] = [];
-			for (const voter of voters) {
-				const url = `https://pintpoll.com/vote/${data.eventCode}/${voter.code}`;
+			for (const code of voterCodes) {
+				const url = `https://pintpoll.com/vote/${data.eventCode}/${code}`;
 
 				// Base QR code options
 				const qrOptions: ConstructorParameters<typeof QRCodeStyling>[0] = {
@@ -283,6 +275,7 @@
 			}
 
 			// Build printable HTML
+			const voters = voterCodes.map((code, i) => ({ code, number: i + 1 }));
 			const html = buildPrintableHtml(voters, qrDataUrls, data.event.name, data.eventCode);
 
 			// Open in new tab

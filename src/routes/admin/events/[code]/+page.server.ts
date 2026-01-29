@@ -490,6 +490,10 @@ export const actions: Actions = {
 			return fail(403, { action: 'generateTestVoter', error: 'Not authorized' });
 		}
 
+		if (!locals.supabaseAdmin) {
+			return fail(500, { action: 'generateTestVoter', error: 'Server configuration error' });
+		}
+
 		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
 		if (!eventId) throw error(404, 'Event not found');
 
@@ -517,7 +521,7 @@ export const actions: Actions = {
 		const voterUuid = crypto.randomUUID();
 		const voterCode = await generateShortCode(locals.supabase);
 
-		const { error: codeError } = await locals.supabase
+		const { error: codeError } = await locals.supabaseAdmin
 			.from('short_codes')
 			.insert({ code: voterCode, target_type: 'voter', target_id: voterUuid });
 
@@ -527,5 +531,75 @@ export const actions: Actions = {
 		}
 
 		return { testVoterCode: voterCode };
+	},
+
+	generateQRCodes: async ({ request, locals, params }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { action: 'generateQRCodes', error: 'Not authorized' });
+		}
+
+		if (!locals.supabaseAdmin) {
+			return fail(500, { action: 'generateQRCodes', error: 'Server configuration error' });
+		}
+
+		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
+		if (!eventId) throw error(404, 'Event not found');
+
+		// Verify user is admin with org access to this event
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super, organization_id')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin) {
+			return fail(403, { action: 'generateQRCodes', error: 'Not authorized' });
+		}
+
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
+			.single();
+
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'generateQRCodes', error: 'You do not have access to this event' });
+		}
+
+		const formData = await request.formData();
+		const countStr = formData.get('count')?.toString();
+		const count = parseInt(countStr || '0', 10);
+
+		if (count < 1 || count > 500) {
+			return fail(400, { action: 'generateQRCodes', error: 'Count must be between 1 and 500' });
+		}
+
+		// Generate voter UUIDs and short codes
+		const voters: { uuid: string; code: string }[] = [];
+		for (let i = 0; i < count; i++) {
+			voters.push({
+				uuid: crypto.randomUUID(),
+				code: await generateShortCode(locals.supabase)
+			});
+		}
+
+		// Batch-insert short codes using service role (bypasses RLS)
+		const shortCodeRows = voters.map((v) => ({
+			code: v.code,
+			target_type: 'voter' as const,
+			target_id: v.uuid
+		}));
+
+		const { error: insertError } = await locals.supabaseAdmin
+			.from('short_codes')
+			.insert(shortCodeRows);
+
+		if (insertError) {
+			console.error('Error inserting voter short codes:', insertError);
+			return fail(500, { action: 'generateQRCodes', error: 'Failed to save voter codes' });
+		}
+
+		return { voterCodes: voters.map((v) => v.code) };
 	}
 };
