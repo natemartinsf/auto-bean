@@ -113,6 +113,8 @@
 
 	// Real-time subscription for beer updates + vote polling
 	onMount(() => {
+		console.log('[DEBUG] Setting up admin beers subscription for event:', data.event.id);
+
 		// Poll vote totals every 10 seconds
 		const pollInterval = setInterval(refreshVoteTotals, 10000);
 
@@ -127,6 +129,7 @@
 					filter: `event_id=eq.${data.event.id}`
 				},
 				async (payload) => {
+					console.log('[DEBUG] INSERT callback received:', payload);
 					const newBeer = payload.new as Beer;
 					if (!beers.some((b) => b.id === newBeer.id)) {
 						// Fetch the brewer_token for the new beer
@@ -164,11 +167,14 @@
 					table: 'beers'
 				},
 				(payload) => {
+					console.log('[DEBUG] DELETE callback received:', payload);
 					const deletedId = payload.old.id;
 					beers = beers.filter((b) => b.id !== deletedId);
 				}
 			)
-			.subscribe();
+			.subscribe((status) => {
+				console.log('[DEBUG] Subscription status:', status);
+			});
 
 		return () => {
 			clearInterval(pollInterval);
