@@ -312,6 +312,58 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	changeOrg: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { changeOrgError: 'Not authorized' });
+		}
+
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin?.is_super) {
+			return fail(403, { changeOrgError: 'Not authorized' });
+		}
+
+		const formData = await request.formData();
+		const adminId = formData.get('adminId')?.toString();
+		const organizationId = formData.get('organizationId')?.toString();
+
+		if (!adminId) {
+			return fail(400, { changeOrgError: 'Admin ID is required' });
+		}
+
+		if (!organizationId) {
+			return fail(400, { changeOrgError: 'Organization is required' });
+		}
+
+		// Verify org exists
+		const { data: orgExists } = await locals.supabase
+			.from('organizations')
+			.select('id')
+			.eq('id', organizationId)
+			.single();
+
+		if (!orgExists) {
+			return fail(400, { changeOrgError: 'Organization not found' });
+		}
+
+		const { error } = await locals.supabase
+			.from('admins')
+			.update({ organization_id: organizationId })
+			.eq('id', adminId);
+
+		if (error) {
+			console.error('Error changing admin organization:', error);
+			return fail(500, { changeOrgError: 'Failed to change organization' });
+		}
+
+		return { changeOrgSuccess: true };
+	},
+
 	createOrg: async ({ request, locals }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) {
@@ -348,5 +400,65 @@ export const actions: Actions = {
 		}
 
 		return { orgCreated: true };
+	},
+
+	deleteOrg: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { deleteOrgError: 'Not authorized' });
+		}
+
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin?.is_super) {
+			return fail(403, { deleteOrgError: 'Not authorized' });
+		}
+
+		const formData = await request.formData();
+		const organizationId = formData.get('organizationId')?.toString();
+
+		if (!organizationId) {
+			return fail(400, { deleteOrgError: 'Organization ID is required' });
+		}
+
+		// Check if org has events (FK constraint ON DELETE RESTRICT)
+		const { count: eventCount } = await locals.supabase
+			.from('events')
+			.select('id', { count: 'exact', head: true })
+			.eq('organization_id', organizationId);
+
+		if (eventCount && eventCount > 0) {
+			return fail(400, { deleteOrgError: 'Cannot delete organization with existing events' });
+		}
+
+		// Check if any admins are assigned to this org
+		const { count } = await locals.supabase
+			.from('admins')
+			.select('id', { count: 'exact', head: true })
+			.eq('organization_id', organizationId);
+
+		if (count && count > 0) {
+			return fail(400, { deleteOrgError: 'Cannot delete organization with assigned admins' });
+		}
+
+		const { error } = await locals.supabase
+			.from('organizations')
+			.delete()
+			.eq('id', organizationId);
+
+		if (error) {
+			console.error('Error deleting organization:', error);
+			// Handle FK violation (race condition: admin/event added between check and delete)
+			const msg = error.code === '23503'
+				? 'Cannot delete organization: it has assigned admins or events'
+				: 'Failed to delete organization';
+			return fail(error.code === '23503' ? 400 : 500, { deleteOrgError: msg });
+		}
+
+		return { orgDeleted: true };
 	}
 };
