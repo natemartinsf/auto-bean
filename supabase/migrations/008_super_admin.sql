@@ -3,6 +3,5 @@
 ALTER TABLE admins ADD COLUMN is_super BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Backfill: set site owner as super admin
--- TODO: hardcoded email in a public repo — replace with a migration that uses
--- a different identifier (e.g., oldest created_at) and scrub git history
-UPDATE admins SET is_super = TRUE WHERE email = '[REDACTED]';
+UPDATE admins SET is_super = TRUE
+WHERE email = (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'super_admin_email');
