@@ -704,6 +704,49 @@
 		{/if}
 	</div>
 
+	<!-- Max Points Setting -->
+	<div class="card">
+		<h2 class="text-lg font-semibold text-brown-900 mb-3">Max Points per Voter</h2>
+		<p class="text-sm text-muted mb-4">
+			The maximum number of points each voter can allocate across all beers.
+		</p>
+		{#if data.hasVotes}
+			<div class="flex items-center gap-3">
+				<input
+					type="number"
+					value={data.event.max_points}
+					disabled
+					class="input w-24 opacity-60 cursor-not-allowed"
+				/>
+				<span class="text-sm text-amber-600">Max points cannot be changed after voting has begun.</span>
+			</div>
+		{:else}
+			<form
+				method="POST"
+				action="?/updateMaxPoints"
+				use:enhance={() => {
+					return async ({ update }) => {
+						await update();
+					};
+				}}
+				class="flex items-center gap-3"
+			>
+				<input
+					type="number"
+					name="maxPoints"
+					value={data.event.max_points}
+					min="1"
+					max="100"
+					class="input w-24"
+				/>
+				<button type="submit" class="btn-secondary">Save</button>
+			</form>
+		{/if}
+		{#if form?.error && form?.action === 'updateMaxPoints'}
+			<p class="text-red-600 text-sm mt-3">{form.error}</p>
+		{/if}
+	</div>
+
 	<!-- Results Ceremony Control -->
 	<div class="card">
 		<h2 class="text-lg font-semibold text-brown-900 mb-3">Results Ceremony</h2>

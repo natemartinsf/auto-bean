@@ -103,13 +103,24 @@ export const load: PageServerLoad = async ({ parent, locals, params }) => {
 		}
 	}
 
+	// Check if any votes exist for this event's beers
+	let hasVotes = false;
+	if (beerIds.length > 0) {
+		const { count } = await locals.supabase
+			.from('votes')
+			.select('*', { count: 'exact', head: true })
+			.in('beer_id', beerIds);
+		hasVotes = (count ?? 0) > 0;
+	}
+
 	return {
 		event: event as Event,
 		beers: (beers || []) as Beer[],
 		voteTotals,
 		eventCode: params.code,
 		manageCode: manageCodeRow?.code ?? null,
-		brewerCodeMap
+		brewerCodeMap,
+		hasVotes
 	};
 };
 
@@ -158,6 +169,77 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	updateMaxPoints: async ({ request, locals, params }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { action: 'updateMaxPoints', error: 'Not authorized' });
+		}
+
+		const eventId = await resolveShortCode(locals.supabase, params.code, 'event');
+		if (!eventId) throw error(404, 'Event not found');
+
+		// Verify user is admin with org access to this event
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super, organization_id')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin) {
+			return fail(403, { action: 'updateMaxPoints', error: 'Not authorized' });
+		}
+
+		const { data: evt } = await locals.supabase
+			.from('events')
+			.select('organization_id')
+			.eq('id', eventId)
+			.single();
+
+		if (!evt || (evt.organization_id !== currentAdmin.organization_id && !currentAdmin.is_super)) {
+			return fail(403, { action: 'updateMaxPoints', error: 'You do not have access to this event' });
+		}
+
+		const formData = await request.formData();
+		const maxPointsStr = formData.get('maxPoints')?.toString();
+		const maxPoints = parseInt(maxPointsStr || '', 10);
+
+		// Validate: must be positive integer between 1 and 100
+		if (isNaN(maxPoints) || maxPoints < 1 || maxPoints > 100) {
+			return fail(400, { action: 'updateMaxPoints', error: 'Max points must be between 1 and 100' });
+		}
+
+		// Check if any votes exist for this event's beers
+		const { data: beers } = await locals.supabase
+			.from('beers')
+			.select('id')
+			.eq('event_id', eventId);
+
+		const beerIds = (beers || []).map((b) => b.id);
+
+		if (beerIds.length > 0) {
+			const { count } = await locals.supabase
+				.from('votes')
+				.select('*', { count: 'exact', head: true })
+				.in('beer_id', beerIds);
+
+			if (count && count > 0) {
+				return fail(400, { action: 'updateMaxPoints', error: 'Cannot change max points after voting has begun' });
+			}
+		}
+
+		const { error: updateError } = await locals.supabase
+			.from('events')
+			.update({ max_points: maxPoints })
+			.eq('id', eventId);
+
+		if (updateError) {
+			console.error('Error updating max points:', updateError);
+			return fail(500, { action: 'updateMaxPoints', error: 'Failed to update max points' });
+		}
+
+		return { maxPointsUpdated: true };
 	},
 
 	advanceStage: async ({ locals, params }) => {
