@@ -167,7 +167,28 @@
 					{@const adminCount = data.admins.filter(a => a.organization_id === org.id).length}
 					<li class="py-3 flex items-center justify-between">
 						<span class="text-brown-900">{org.name}</span>
-						<span class="text-sm text-muted">{adminCount} admin{adminCount === 1 ? '' : 's'}</span>
+						<div class="flex items-center gap-3">
+							<span class="text-sm text-muted">{adminCount} admin{adminCount === 1 ? '' : 's'}</span>
+							{#if adminCount === 0}
+								<form
+									method="POST"
+									action="?/deleteOrg"
+									use:enhance={() => {
+										if (!confirm(`Delete organization "${org.name}"?`)) {
+											return () => {};
+										}
+										return async ({ update }) => {
+											await update();
+										};
+									}}
+								>
+									<input type="hidden" name="organizationId" value={org.id} />
+									<button type="submit" class="btn-ghost text-red-600 hover:text-red-700 text-sm">
+										Delete
+									</button>
+								</form>
+							{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>
@@ -204,6 +225,10 @@
 			<p class="text-red-600 text-sm mt-2">{form.orgError}</p>
 		{:else if form?.orgCreated}
 			<p class="text-green-600 text-sm mt-2">Organization created.</p>
+		{:else if form?.deleteOrgError}
+			<p class="text-red-600 text-sm mt-2">{form.deleteOrgError}</p>
+		{:else if form?.orgDeleted}
+			<p class="text-green-600 text-sm mt-2">Organization deleted.</p>
 		{/if}
 	</div>
 

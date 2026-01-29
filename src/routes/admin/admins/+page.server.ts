@@ -389,5 +389,51 @@ export const actions: Actions = {
 		}
 
 		return { orgCreated: true };
+	},
+
+	deleteOrg: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { deleteOrgError: 'Not authorized' });
+		}
+
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin?.is_super) {
+			return fail(403, { deleteOrgError: 'Not authorized' });
+		}
+
+		const formData = await request.formData();
+		const organizationId = formData.get('organizationId')?.toString();
+
+		if (!organizationId) {
+			return fail(400, { deleteOrgError: 'Organization ID is required' });
+		}
+
+		// Check if any admins are assigned to this org
+		const { count } = await locals.supabase
+			.from('admins')
+			.select('id', { count: 'exact', head: true })
+			.eq('organization_id', organizationId);
+
+		if (count && count > 0) {
+			return fail(400, { deleteOrgError: 'Cannot delete organization with assigned admins' });
+		}
+
+		const { error } = await locals.supabase
+			.from('organizations')
+			.delete()
+			.eq('id', organizationId);
+
+		if (error) {
+			console.error('Error deleting organization:', error);
+			return fail(500, { deleteOrgError: 'Failed to delete organization' });
+		}
+
+		return { orgDeleted: true };
 	}
 };
