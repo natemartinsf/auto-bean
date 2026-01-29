@@ -312,6 +312,47 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	changeOrg: async ({ request, locals }) => {
+		const { user } = await locals.safeGetSession();
+		if (!user) {
+			return fail(403, { changeOrgError: 'Not authorized' });
+		}
+
+		const { data: currentAdmin } = await locals.supabase
+			.from('admins')
+			.select('id, is_super')
+			.eq('user_id', user.id)
+			.single();
+
+		if (!currentAdmin?.is_super) {
+			return fail(403, { changeOrgError: 'Not authorized' });
+		}
+
+		const formData = await request.formData();
+		const adminId = formData.get('adminId')?.toString();
+		const organizationId = formData.get('organizationId')?.toString();
+
+		if (!adminId) {
+			return fail(400, { changeOrgError: 'Admin ID is required' });
+		}
+
+		if (!organizationId) {
+			return fail(400, { changeOrgError: 'Organization is required' });
+		}
+
+		const { error } = await locals.supabase
+			.from('admins')
+			.update({ organization_id: organizationId })
+			.eq('id', adminId);
+
+		if (error) {
+			console.error('Error changing admin organization:', error);
+			return fail(500, { changeOrgError: 'Failed to change organization' });
+		}
+
+		return { changeOrgSuccess: true };
+	},
+
 	createOrg: async ({ request, locals }) => {
 		const { user } = await locals.safeGetSession();
 		if (!user) {

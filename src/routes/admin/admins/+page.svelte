@@ -95,38 +95,63 @@
 			<ul class="divide-y divide-brown-100">
 				{#each data.admins as admin}
 					{@const isSelf = admin.id === data.admin?.id}
-					<li class="py-3 flex items-center justify-between">
-						<div>
-							<span class="text-brown-900">{admin.email}</span>
-							{#if admin.organization_name}
-								<span class="text-xs text-brown-500 ml-2">{admin.organization_name}</span>
-							{/if}
+					<li class="py-3 flex items-center justify-between gap-3">
+						<div class="flex items-center gap-2 min-w-0 flex-1">
+							<span class="text-brown-900 truncate">{admin.email}</span>
 							{#if isSelf}
-								<span class="text-xs text-muted ml-1">(you)</span>
+								<span class="text-xs text-muted shrink-0">(you)</span>
 							{/if}
 						</div>
-						{#if !isSelf}
+						<div class="flex items-center gap-2 shrink-0">
 							<form
 								method="POST"
-								action="?/remove"
+								action="?/changeOrg"
 								use:enhance={() => {
-									if (!confirm(`Remove ${admin.email} as admin?`)) {
-										return () => {};
-									}
 									return async ({ update }) => {
 										await update();
 									};
 								}}
 							>
 								<input type="hidden" name="adminId" value={admin.id} />
-								<button type="submit" class="btn-ghost text-red-600 hover:text-red-700 text-sm">
-									Remove
-								</button>
+								<select
+									name="organizationId"
+									class="input !py-1 !text-xs"
+									value={admin.organization_id}
+									onchange={(e) => e.currentTarget.form?.requestSubmit()}
+								>
+									{#each data.organizations as org}
+										<option value={org.id}>{org.name}</option>
+									{/each}
+								</select>
 							</form>
-						{/if}
+							{#if !isSelf}
+								<form
+									method="POST"
+									action="?/remove"
+									use:enhance={() => {
+										if (!confirm(`Remove ${admin.email} as admin?`)) {
+											return () => {};
+										}
+										return async ({ update }) => {
+											await update();
+										};
+									}}
+								>
+									<input type="hidden" name="adminId" value={admin.id} />
+									<button type="submit" class="btn-ghost text-red-600 hover:text-red-700 text-sm">
+										Remove
+									</button>
+								</form>
+							{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>
+		{/if}
+		{#if form?.changeOrgError}
+			<p class="text-red-600 text-sm mt-2">{form.changeOrgError}</p>
+		{:else if form?.changeOrgSuccess}
+			<p class="text-green-600 text-sm mt-2">Organization updated.</p>
 		{/if}
 	</div>
 
