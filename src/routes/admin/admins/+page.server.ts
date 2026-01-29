@@ -185,7 +185,7 @@ export const actions: Actions = {
 
 		if (fetchError || !accessRequest) {
 			console.error('Error fetching access request:', fetchError);
-			return fail(500, { approveError: 'Failed to fetch access request' });
+			return fail(500, { approveError: 'Failed to fetch access request', approveRequestId: requestId });
 		}
 
 		// Resolve organization ID
@@ -235,7 +235,7 @@ export const actions: Actions = {
 
 		if (updateError) {
 			console.error('Error approving request:', updateError);
-			return fail(500, { approveError: 'Admin created but failed to update request status' });
+			return fail(500, { approveError: 'Admin created but failed to update request status', approveRequestId: requestId });
 		}
 
 		return { approveSuccess: true };
