@@ -18,8 +18,10 @@
 	<title>PintPoll - Digital Voting for Homebrew Competitions</title>
 	<meta
 		name="description"
-		content="Run people's choice awards at your homebrew competition with QR-based digital voting. No app downloads, no paper ballots."
+		content="Simple, mobile-first voting for homebrew competitions. QR codes, point allocation, live results."
 	/>
+	<meta property="og:title" content="PintPoll - Digital Voting for Homebrew Competitions">
+	<meta property="og:description" content="Simple, mobile-first voting for homebrew competitions. QR codes, point allocation, live results.">
 </svelte:head>
 
 <div class="min-h-screen">

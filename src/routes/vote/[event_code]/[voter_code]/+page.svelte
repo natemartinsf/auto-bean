@@ -256,6 +256,8 @@
 
 <svelte:head>
 	<title>Vote - {data.event.name}</title>
+	<meta property="og:title" content="Vote - {data.event.name}">
+	<meta property="og:description" content="Cast your vote for {data.event.name} on PintPoll">
 </svelte:head>
 
 <div class="min-h-screen">
