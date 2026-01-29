@@ -209,19 +209,25 @@
 
 			const response = await fetch('?/generateQRCodes', {
 				method: 'POST',
-				body: formData
+				body: formData,
+				credentials: 'same-origin'
 			});
 
 			const result = await response.json();
 
-			// SvelteKit wraps the data in a specific format
-			if (result.type === 'failure' || !result.data?.voterCodes) {
-				console.error('Error generating QR codes:', result.data?.error || 'Unknown error');
+			// SvelteKit action responses: { type: 'success'|'failure', data: {...} }
+			if (result.type === 'failure') {
+				console.error('Error generating QR codes:', result.data?.error || 'Server error');
 				alert(result.data?.error || 'Failed to generate voter codes. Please try again.');
 				return;
 			}
 
-			const voterCodes: string[] = result.data.voterCodes;
+			const voterCodes: string[] = result.data?.voterCodes;
+			if (!voterCodes || voterCodes.length === 0) {
+				console.error('No voter codes returned:', result);
+				alert('Failed to generate voter codes. Please try again.');
+				return;
+			}
 
 			// Generate QR code data URLs
 			const qrDataUrls: string[] = [];
