@@ -210,8 +210,18 @@
 			const response = await fetch('?/generateQRCodes', {
 				method: 'POST',
 				body: formData,
-				credentials: 'same-origin'
+				credentials: 'same-origin',
+				headers: {
+					'Accept': 'application/json'
+				}
 			});
+
+			if (!response.ok) {
+				const text = await response.text();
+				console.error('Server error:', response.status, text);
+				alert('Server error. Please try again.');
+				return;
+			}
 
 			const result = await response.json();
 
