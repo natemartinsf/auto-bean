@@ -147,6 +147,8 @@
 
 <svelte:head>
 	<title>Results - {data.event.name}</title>
+	<meta property="og:title" content="Results - {data.event.name}">
+	<meta property="og:description" content="See the results for {data.event.name}">
 </svelte:head>
 
 <div class="min-h-screen flex flex-col">
