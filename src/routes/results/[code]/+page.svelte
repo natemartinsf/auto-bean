@@ -11,20 +11,23 @@
 
 	let { data } = $props();
 
-	// Track current reveal stage (synced from server data initially, then real-time updates)
-	let revealStage = $state(0);
+	// Initialize state directly from server data to avoid flicker
+	const initialStage = data.event.reveal_stage ?? 0;
 
-	// Sync state with props when data changes
-	$effect(() => {
-		revealStage = data.event.reveal_stage ?? 0;
-	});
+	// Track current reveal stage (initialized from server, updated via real-time)
+	let revealStage = $state(initialStage);
 
 	// Track which places have been "revealed" with animation
-	// This prevents re-animating when returning to page
-	let animatedPlaces = $state<Set<number>>(new Set());
+	// Initialize based on current stage to prevent re-animating on page return
+	let animatedPlaces = $state<Set<number>>(
+		initialStage >= 4 ? new Set([1, 2, 3]) :
+		initialStage >= 3 ? new Set([2, 3]) :
+		initialStage >= 2 ? new Set([3]) :
+		new Set()
+	);
 
-	// Confetti fired flag
-	let confettiFired = $state(false);
+	// Confetti already fired if we load at stage 4 (prevents re-firing on navigation)
+	let confettiFired = $state(initialStage >= 4);
 
 	// Group beers by score tier for podium reveal (handles ties)
 	// We reveal by "podium position" (3rd, 2nd, 1st) not literal rank numbers
@@ -110,18 +113,8 @@
 		}, 500);
 	}
 
-	// Real-time subscription
+	// Real-time subscription for stage updates during the session
 	onMount(() => {
-		// If already at stage 4, mark all as animated (returning to page)
-		if (revealStage >= 4) {
-			animatedPlaces = new Set([1, 2, 3]);
-			confettiFired = true;
-		} else if (revealStage >= 3) {
-			animatedPlaces = new Set([2, 3]);
-		} else if (revealStage >= 2) {
-			animatedPlaces = new Set([3]);
-		}
-
 		const channel = data.supabase
 			.channel('results-event')
 			.on(
