@@ -16,6 +16,19 @@ export const actions: Actions = {
 			return { success: true };
 		}
 
+		// Timing check — bots submit too fast
+		const loadTime = parseInt(formData.get('loadTime')?.toString() || '0');
+		const submitTime = Date.now();
+		if (submitTime - loadTime < 3000) {
+			return { success: true }; // Silent success for bots
+		}
+
+		// Trivia check — brewing knowledge gate
+		const trivia = formData.get('trivia')?.toString();
+		if (trivia?.toLowerCase() !== 'yeast') {
+			return { success: true }; // Silent success - don't reveal defense
+		}
+
 		if (!name || !email || !club_name) {
 			return fail(400, { error: 'Name, email, and club name are required.' });
 		}

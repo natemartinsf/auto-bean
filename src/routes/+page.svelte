@@ -9,6 +9,11 @@
 	let clubName = $state('');
 	let message = $state('');
 
+	// Trivia spam protection
+	const triviaOptions = ['Yeast', 'Hops', 'Malt'];
+	const shuffledOptions = [...triviaOptions].sort(() => Math.random() - 0.5);
+	const loadTime = Date.now();
+
 	function scrollToForm() {
 		document.getElementById('request-access')?.scrollIntoView({ behavior: 'smooth' });
 	}
@@ -283,6 +288,26 @@
 								bind:value={clubName}
 							/>
 						</div>
+
+						<div>
+							<span class="label">What converts sugars into alcohol during fermentation?</span>
+							<div class="mt-2 flex gap-4">
+								{#each shuffledOptions as option}
+									<label class="flex cursor-pointer items-center gap-2">
+										<input
+											type="radio"
+											name="trivia"
+											value={option}
+											required
+											class="h-4 w-4 border-brown-300 text-amber-600 focus:ring-amber-500"
+										/>
+										<span class="text-sm text-brown-700">{option}</span>
+									</label>
+								{/each}
+							</div>
+						</div>
+
+						<input type="hidden" name="loadTime" value={loadTime} />
 
 						<div>
 							<label class="label" for="message">
