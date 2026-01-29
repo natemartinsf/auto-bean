@@ -341,6 +341,8 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
+	<link rel="icon" href="/favicon.ico" sizes="32x32">
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 	<title>QR Codes - ${eventName}</title>
 	<style>
 		* {
